@@ -1,0 +1,71 @@
+@startuml callflow
+skinparam class {
+    BackgroundColor White
+    ArrowColor Black
+    BorderColor Black
+    AttributeIconSize 0
+}
+'skinparam style strictuml
+skinparam stereotypeCBackgroundColor White
+skinparam stereotypeIBackgroundColor White
+skinparam stereotypeEBackgroundColor White
+skinparam stereotypeABackgroundColor White
+skinparam linetype ortho
+
+title "Joining"
+hide footbox
+
+actor A
+actor B
+
+collections MsgSrv1
+collections MsgSrv2
+queue PUBSUB
+
+
+A -> MsgSrv1 ++ : Join (A,B)
+create control Go1
+
+MsgSrv1 -> Go1 : Join A
+Go1 -> PUBSUB : SUBS A
+
+create control Go2
+
+MsgSrv1 -> Go2 : Join B
+Go2 -> PUBSUB : SUBS B
+
+return 200OK
+
+database DB
+
+A -> MsgSrv1 ++ : Send "msg"
+
+MsgSrv1 -> Go1 : Send "msg"
+
+Go1 -> DB : Write "msg"
+
+return 200OK
+
+Go1 -> PUBSUB : PUBLISH msg-id
+
+PUBSUB -> Go2 : msg-id
+
+
+collections Push
+
+Go2 -> Push : wake-up B
+
+Push -> B : wake-up B
+
+B -> MsgSrv2 ++ : GetMsg
+
+MsgSrv2 -> DB : Read undelivered messages
+
+return "msg"
+
+
+
+
+@enduml
+
+

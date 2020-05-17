@@ -1,0 +1,81 @@
+@startuml callflow
+skinparam class {
+    BackgroundColor White
+    ArrowColor Black
+    BorderColor Black
+    AttributeIconSize 0
+}
+'skinparam style strictuml
+skinparam stereotypeCBackgroundColor White
+skinparam stereotypeIBackgroundColor White
+skinparam stereotypeEBackgroundColor White
+skinparam stereotypeABackgroundColor White
+skinparam linetype ortho
+
+
+title "Call Flow"
+hide footbox
+
+actor u1
+actor u2
+
+
+collections Push
+
+u1 -> MsgSer1 ++ : Join 
+
+MsgSer1 -> MsgSer2  ++ : Join
+
+MsgSer2 -> PUBSUB ++ : SUBS
+return 200 OK
+
+return 200 OK
+
+return 200 OK
+
+queue PUBSUB
+
+MsgSer2 -> Push : Wake-up
+
+Push -> u2 : Wake-up
+
+u2 -> MsgSer2 ++ : Get S&F msg
+
+database Dynamo
+
+MsgSer2 -> Dynamo ++ : check S&F msg
+return 
+return 200 OK
+
+u1 -> MsgSer1 : Send "msg1"
+return 
+
+MsgSer1 -> PUBSUB : PUBLISH "msg1"
+return
+
+PUBSUB -> MsgSer2 : "msg1"
+
+
+
+MsgSer2 -> u2  : Send "msg1"
+
+u2 -> MsgSer2 : delivery "msg1"
+
+MsgSer2 -> PUBSUB : delivery "msg1"
+
+PUBSUB -> MsgSer1 : delivery "msg1"
+
+MsgSer1 -> u1 : delivery "msg1"
+
+u2 -> MsgSer2 : display "msg1"
+
+MsgSer2 -> PUBSUB: display "msg1"
+
+PUBSUB -> MsgSer1 : display "msg1"
+
+MsgSer1 -> u1 : display "msg1"
+
+
+@enduml
+
+
