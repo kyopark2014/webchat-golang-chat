@@ -25,13 +25,12 @@ database DB
 
 MsgSrvB -> Redis : SUBSCRIBE chat-id
 
-A -> MsgSrvA ++ : Send "msg"
+A -> MsgSrvA : "msg"
 
 MsgSrvA -> DB : Write "msg"
 
 MsgSrvA -> Redis : SET msg-id "msg"
 
-return 200OK
 
 MsgSrvA -> MsgSrvA : Is B subscribing chat-id?
 

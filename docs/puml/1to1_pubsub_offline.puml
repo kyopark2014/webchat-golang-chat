@@ -1,0 +1,54 @@
+@startuml callflow
+skinparam class {
+    BackgroundColor White
+    ArrowColor Black
+    BorderColor Black
+    AttributeIconSize 0
+}
+'skinparam style strictuml
+skinparam stereotypeCBackgroundColor White
+skinparam stereotypeIBackgroundColor White
+skinparam stereotypeEBackgroundColor White
+skinparam stereotypeABackgroundColor White
+skinparam linetype ortho
+
+title "Basic Flow 1-to-1 (PUBSUB) - offline"
+hide footbox
+
+actor A
+actor B
+
+collections MsgSrv1
+collections MsgSrv2
+database DB
+queue PUBSUB
+queue QUEUE
+
+A -> MsgSrv1 : connect
+MsgSrv1 -> DB : location A
+MsgSrv1 -> PUBSUB : SUBSCRIBE A
+
+
+B -> MsgSrv2 !! : connect
+
+A -> MsgSrv1 : "msg" B
+MsgSrv1 -> DB ++ : Is B connected?
+return no
+
+MsgSrv1 -> QUEUE : LPUSH B "msg"
+
+collections PUSH
+MsgSrv1 -> PUSH : wake-up B
+
+PUSH -> B : wake-up
+
+B -> MsgSrv2 ++ : connect
+MsgSrv2 -> QUEUE : LRANGE B 0 -1
+
+QUEUE -> MsgSrv2 : "msg"
+
+MsgSrv2 -> B : "msg"
+
+@enduml
+
+
