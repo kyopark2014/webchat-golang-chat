@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"webchat/internal/config"
+	"webchat/internal/data"
 	"webchat/internal/logger"
 	"webchat/internal/rediscache"
 
@@ -24,14 +25,6 @@ type Event struct {
 	To        string
 	Timestamp int
 	Text      string
-}
-
-// Message is the data structure of messages
-type Message struct {
-	From      string
-	To        string
-	Timestamp int
-	Message   string
 }
 
 // InitServer initializes the server
@@ -57,21 +50,25 @@ func InitServer(conf *config.AppConfig) error {
 		userEvent := make(chan Event, 10)
 		receive := make(chan Event, 10) // received event
 
+		so.On("join", func(user string) {
+			log.D("Join...%v (%v)", user, so.Id())
+			subscribeEvent(user, userEvent)
+		})
+
 		// make connection with redis server
-		// userEvent <- event (from PUBSUB)
 		go func() { // server <-> QUEUE / PUBSUB
 			for {
 				select {
 				case event := <-receive: //
-					log.D("New event was received: %v", event.Text)
-
-					// for test
-					log.D("Then, send the event to QUEUE and PUBSUB")
-					userEvent <- event
+					log.D("sent message: %v", event.Text)
 
 					// To-Do: check the validity of receiver
 					// To-Do: lpush to QUEUE
+					// pushEvent(&event)
+					//getEventList(event.From)
+
 					// publish to PUBSUB
+					publishEvent(&event)
 				}
 			}
 
@@ -85,7 +82,7 @@ func InitServer(conf *config.AppConfig) error {
 					so.Emit("chat", event)
 
 				case msg := <-newMessages: // received message from client(browser)
-					var newMSG Message
+					var newMSG data.Message
 					json.Unmarshal([]byte(msg), &newMSG)
 					log.D("receiving message from browser: %v %v %v %v (%v)", newMSG.From, newMSG.To, newMSG.Timestamp, newMSG.Message, so.Id())
 
@@ -122,24 +119,146 @@ func NewEvent(evtType string, from string, to string, timestamp int, msg string)
 	return Event{evtType, from, to, timestamp, msg}
 }
 
-// setMsg is getting the identification from the url
-func setMsg(w http.ResponseWriter, r *http.Request) {
-	log.D("AddUserInfo...")
-	w.Header().Set("Content-Type", "application/json")
-
-	var value rediscache.UserProfile
-	_ = json.NewDecoder(r.Body).Decode(&value)
-	log.D("value: %+v", value)
+// setEvent is to save a message
+func publishEvent(event *Event) {
+	log.D("event: %v %v %v %v %v", event.EvtType, event.From, event.To, event.Timestamp, event.Text)
 
 	// generate key
-	key := value.UID // UID to identify the profile
-	log.D("key: %v", key)
+	key := event.To // UID to identify the profile
 
-	_, rErr := rediscache.SetCache(key, &value)
-	if rErr != nil {
-		log.E("Error of setCache: %v", rErr)
-		w.WriteHeader(http.StatusServiceUnavailable)
-		return
+	raw, err := json.Marshal(event)
+	if err != nil {
+		log.E("Cannot encode to Json", err)
 	}
-	w.WriteHeader(http.StatusOK)
+	log.D("key: %v value: %v", key, string(raw))
+
+	_, errRedis := rediscache.Publish(key, raw)
+	if errRedis != nil {
+		log.E("Error of Publish: %v", errRedis)
+	}
+}
+
+func subscribeEvent(channel string, e chan Event) {
+	log.D("channel: %v", channel)
+
+	d := make(chan []byte, 10)
+
+	if err := rediscache.Subscribe(channel, d); err != nil {
+		log.E("%s", err)
+	}
+
+	go func() {
+		for {
+			raw := <-d
+			log.D("Received Data: %v", string(raw))
+
+			var event Event
+			errJson := json.Unmarshal([]byte(raw), &event)
+			if errJson != nil {
+				log.E("%v: %v", channel, errJson)
+			}
+
+			e <- event
+
+			/*	if event == nil {
+					log.D("No cache in Redis")
+				} else {
+					log.D("value: %v", event.Text) // To-Do
+				} */
+		}
+	}()
+}
+
+// setEvent is to save a message
+func pushEvent(event *Event) {
+	log.D("event: %v %v %v %v %v", event.EvtType, event.From, event.To, event.Timestamp, event.Text)
+
+	// generate key
+	key := event.From // UID to identify the profile
+
+	raw, err := json.Marshal(event)
+	if err != nil {
+		log.E("Cannot encode to Json", err)
+	}
+	log.D("key: %v value: %v", key, string(raw))
+
+	_, errRedis := rediscache.PushList(key, raw)
+	if errRedis != nil {
+		log.E("Error of pushEvent: %v", errRedis)
+	}
+}
+
+// GetUserInfo is getting the identification from the url
+func getEventList(key string) []*Event {
+	raw, err := rediscache.GetList(key)
+	if err != nil {
+		log.E("Error: %v", err)
+	}
+
+	if err = rediscache.Del(key); err != nil {
+		log.E("Fail to delete: key: %v errMsg: %v", key, err)
+	}
+
+	var values []*Event
+
+	var value *Event
+	for index := range raw {
+		log.D("raw[%v] : %v", index, string(raw[index]))
+		err = json.Unmarshal([]byte(raw[index]), &value)
+		if err != nil {
+			log.E("%v: %v", key, err)
+		}
+
+		if value == nil {
+			log.D("No cache in Redis")
+		} else {
+			log.D("value: %v", value.Text) // To-Do
+		}
+
+		values = append(values, value)
+	}
+
+	return values
+}
+
+// setEvent is to save a message
+func setEvent(event *Event) {
+	log.D("event: %v %v %v %v %v", event.EvtType, event.From, event.To, event.Timestamp, event.Text)
+
+	// generate key
+	key := event.From // UID to identify the profile
+
+	raw, err := json.Marshal(event)
+	if err != nil {
+		log.E("Cannot encode to Json", err)
+	}
+	log.D("key: %v value: %v", key, string(raw))
+
+	_, errRedis := rediscache.SetCache(key, raw)
+	if errRedis != nil {
+		log.E("Error of setEvent: %v", errRedis)
+	}
+}
+
+// GetUserInfo is getting the identification from the url
+func getEvent(key string) *Event {
+	raw, err := rediscache.GetCache(key)
+	if err != nil {
+		log.E("Error: %v", err)
+	}
+	log.D("raw: %v", string(raw))
+
+	var value *Event
+	err = json.Unmarshal([]byte(raw), &value)
+	if err != nil {
+		log.E("%v: %v", key, err)
+	}
+
+	if value == nil {
+		log.D("No cache in Redis")
+	} else {
+		log.D("value: %v", value.Text) // To-Do
+	}
+
+	return value
 }

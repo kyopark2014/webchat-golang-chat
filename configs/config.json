@@ -10,12 +10,12 @@
         "PoolMaxIdle":300,
         "PoolMaxActive":300,
         "PoolIdleTimeout":600,
-        "TTL":60,
+        "TTL":0,
         "Password":"",
         "ConnTimeout":500
     },
     "ChatConfig": {
-        "Host": "localhost",
+        "Host": "10.0.2.15",
         "Port": 4000
     }
   }

@@ -1,5 +1,5 @@
 // Make connection
-var socket = io.connect('http://10.0.2.15:4000');
+var socket = io.connect('http://localhost:4000');
 
 // Query DOM
 var message = document.getElementById('message'),
@@ -14,23 +14,16 @@ var fromID = localStorage.getItem('from'); // set userID if exists
 if(fromID != '')    {
     from.value = fromID;
 }
-
 var toID = localStorage.getItem('to'); // set userID if exists 
 if(toID != '')    {
     to.value = toID;
 }
-
-var subscribed = false;
 
 function onSend(e) {
     if(from.value=='' || to.value=='') {
         alert("Sender/Receiver should not be blank");
     }
     else if(message.value != '') {
-        if(subscribed == false) {
-            subscribed = true;
-            socket.emit('join',from.value);  
-        }
         if(fromID != from.value) {
             fromID = from.value;  // update
             localStorage.setItem('from', from.value)  
@@ -56,8 +49,7 @@ function onSend(e) {
         // show the message
         var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
         output.innerHTML += '<div style="display: flex; justify-content: flex-end"><p>'+ message.value +'     <strong>('+ timestr+')</strong></p></div>';        
-        output.scrollIntoView(false);
-
+   
         // send the message
         socket.emit('chat', msgJSON);
     }
