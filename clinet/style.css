@@ -6,7 +6,7 @@ body {
   }
   
   .container {
-    margin: 60px auto;
+    margin: 60px auto;  
     background: #fff;
     padding: 0;
     border-radius: 7px;
@@ -40,6 +40,21 @@ body {
     color: #74b9ff;
     cursor: pointer;
   }
+
+  .settings-send--right {
+    float: right;
+  }
+  .settings-send--right i {
+    margin-top: 10px;
+    font-size: 25px;
+    color: grey;
+    margin-left: 14px;
+    transition: .3s;
+  }
+  .settings-send i:hover {
+    color: #74b9ff;
+    cursor: pointer;
+  }  
   
   .search-box {
     background: #fafafa;

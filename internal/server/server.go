@@ -153,9 +153,9 @@ func subscribeEvent(channel string, e chan Event) {
 			log.D("Received Data: %v", string(raw))
 
 			var event Event
-			errJson := json.Unmarshal([]byte(raw), &event)
-			if errJson != nil {
-				log.E("%v: %v", channel, errJson)
+			errJSON := json.Unmarshal([]byte(raw), &event)
+			if errJSON != nil {
+				log.E("%v: %v", channel, errJSON)
 			}
 
 			e <- event
