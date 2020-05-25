@@ -1,16 +1,30 @@
 body {
+    /* background-image: : url('https://image... '); */
     background-color: #3498db;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    
   }
   
   .container {
+    max-height: 1000px; /* added for height */
     margin: 60px auto;  
     background: #fff;
     padding: 0;
     border-radius: 7px;
   }
+
+  .chat-panel {
+    background: #111;
+ /*  max-height: 1500;
+   height: 600px;
+        max-width: 600px;
+    margin: 30px auto;
+    border: 1px solid #ddd;
+    box-shadow: 1px 3px 5px rgba(0,0,0,0.05);
+    border-radius: 2px; */
+  } 
   
   .profile-image {
     width: 50px;
@@ -240,7 +254,9 @@ body {
     align-items: center;
     margin-top: 19px;
     bottom: 0;
+    float: bottom;
   }
+
   .chat-box-tray input {
     margin: 0 10px;
     padding: 6px 2px;
