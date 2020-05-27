@@ -54,10 +54,11 @@ function onSend(e) {
         // show the message
         const li = document.createElement('li');  // list item
         // li.className = 'row no-gutters col-md-3 offset-md-9 chat-bubble--right';
-        li.className = 'row offset-md-9 send-bubble send-bubble--right';
+        li.className = 'chat-sender chat-sender--right';
         li.appendChild(document.createTextNode(`${message.value}`));
         msgBubble.appendChild(li);
-    
+        li.scrollIntoView(false);
+
         // send the message
         socket.emit('chat', msgJSON);
     }
@@ -78,9 +79,8 @@ socket.on('chat', function(data){
         lir.className = 'row col-sm-4 receive-bubble receive-bubble--left';
         lir.appendChild(document.createTextNode(data.Text));
         msgBubble.appendChild(lir); 
+        li.scrollIntoView(false);
     }
-        
-    msgBubble.scrollIntoView(false);
   });
 
 // Listen for events 
