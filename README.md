@@ -29,4 +29,8 @@ The proposed architecture is using PUBSUB to endpoints which doesn't have the re
 
 where Sender will publish to Receiver directly and message can be delivered consistently even if Receiver is offline.
 
+### OVERALL STRUCTUR
 
+There are two connection ways between client and server. Socket.io is used for chat session and REST API is used for call logs.
+
+![image](https://user-images.githubusercontent.com/52392004/82965685-c6455500-a003-11ea-91ed-974b845d856d.png)
