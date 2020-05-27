@@ -21,7 +21,7 @@
   
   header {
     background: #f4f4f4;
-    padding: 1rem;
+    padding-top: 2rem;
     text-align: center;
   }
   
@@ -29,11 +29,12 @@
     margin: auto;
     width: 500px;
     overflow: auto;
-    padding: 3rem 2rem;
+
+    padding: 1rem 1rem;
   }
   
   #my-form {
-    padding: 2rem;
+    padding: 1rem;
     background: #f4f4f4;
   }
   
@@ -74,4 +75,8 @@
     color: #fff;
     padding: 5px;
     margin: 5px;
+  }
+
+  .input {
+      margin-top: 30px;
   }

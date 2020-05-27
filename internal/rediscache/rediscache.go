@@ -115,7 +115,7 @@ func Publish(key string, raw []byte) (interface{}, error) {
 	c := pool.Get()
 	defer c.Close()
 
-	log.D("PUBLISH: key: %s, value: %v", key, string(raw))
+	log.D("PUBLISH: %s %v", key, string(raw))
 
 	return c.Do("PUBLISH", key, raw)
 }
@@ -140,9 +140,9 @@ func Subscribe(channel string, d chan []byte) error {
 			switch v := psc.Receive().(type) {
 			case redis.Message:
 				d <- v.Data
-				log.D("%s: message: %s\n", v.Channel, v.Data)
+				log.D("message: %s %s\n", v.Channel, v.Data)
 			case redis.Subscription:
-				log.D("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+				log.D("subscribed: %s %s %d\n", v.Channel, v.Kind, v.Count)
 			case error:
 				log.D("%v", error.Error)
 				return

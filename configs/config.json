@@ -15,7 +15,7 @@
         "ConnTimeout":500
     },
     "ChatConfig": {
-        "Host": "10.0.2.15",
+        "Host": "localhost",
         "Port": 4000
     }
   }

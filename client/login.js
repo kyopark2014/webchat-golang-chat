@@ -2,7 +2,6 @@ const myForm = document.querySelector('#my-form');
 const nameInput = document.querySelector('#name');
 const emailInput = document.querySelector('#email');
 const msg = document.querySelector('.msg');
-const userList = document.querySelector('#users');
 
 myForm.addEventListener('submit', onSubmit);
 
@@ -10,8 +9,15 @@ myForm.addEventListener('submit', onSubmit);
 nameInput.value = localStorage.getItem('name');
 emailInput.value = localStorage.getItem('email');
 
-const ul = document.querySelector('.items');
-ul.firstElementChild.textContent = `${nameInput.value} : ${emailInput.value}`;
+var name = localStorage.getItem('name'); // set userID if exists 
+if(name != '')    {
+    nameInput.value = name;
+}
+
+var email = localStorage.getItem('email'); // set userID if exists 
+if(email != '')    {
+    emailInput.value = email;
+}
 
 function onSubmit(e) {
     e.preventDefault();
@@ -19,29 +25,21 @@ function onSubmit(e) {
     console.log(nameInput.value);
     console.log(emailInput.value);
 
-    if(nameInput.value === '' || emailInput.value === '') {
-        // alert('Please enter fields');
+    if(nameInput.value == '' || emailInput.value == '') {
         msg.classList.add('error');
         msg.innerHTML = 'Please enter fields'
 
         setTimeout(()=> msg.remove(), 3000);
     } else {
-        // console.log('success');
-        const li = document.createElement('li');  // list item
-        li.appendChild(document.createTextNode(`${nameInput.value} : ${emailInput.value}`));
-        userList.appendChild(li);
-
         // update name and email
         localStorage.setItem('name',nameInput.value);
         localStorage.setItem('email',emailInput.value);
 
-        const ul = document.querySelector('.items');
-        ul.firstElementChild.textContent = `${nameInput.value} : ${emailInput.value}`;
-        console.log('name: ' + localStorage.getItem('name') + ' email: ' + emailInput.value);
-
         // clear fields
         nameInput.value = '';
         emailInput.value = '';
+
+        window.location.href = "chat.html";
     }
 }
 
