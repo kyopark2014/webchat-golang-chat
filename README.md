@@ -23,4 +23,8 @@ where Sender and Receiver are subscribed to a chat room with chat-id.
 
 The proposed archecture is using PUBSUB to the endpoints which desn't have the redundancy and some of benefits to notice the received message and also manages a connection for multiple chat rooms.
 
+![image](https://user-images.githubusercontent.com/52392004/82962567-89756000-9ffb-11ea-8e5a-7eb737fd6f37.png)
+
+where Sender will publish to Receiver directly.
+
 
