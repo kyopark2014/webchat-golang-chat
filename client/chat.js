@@ -54,7 +54,7 @@ function onSend(e) {
         // show the message
         const li = document.createElement('li');  // list item
         // li.className = 'row no-gutters col-md-3 offset-md-9 chat-bubble--right';
-        li.className = 'chat-sender chat-sender--right';
+        li.className = 'chat-sender chat-sender--right chat-bubble chat-bubble--right';
         li.appendChild(document.createTextNode(`${message.value}`));
         msgBubble.appendChild(li);
         li.scrollIntoView(false);
@@ -76,7 +76,7 @@ socket.on('chat', function(data){
     if(data.EvtType == 'message') {
         const lir = document.createElement('li');  // list item
         // li.className = 'row no-gutters col-md-3 offset-md-9 chat-bubble--right';
-        lir.className = 'row col-sm-4 receive-bubble receive-bubble--left';
+        lir.className = 'row col-sm-4 receive-bubble receive-bubble--left chat-bubble chat-bubble--right';
         lir.appendChild(document.createTextNode(data.Text));
         msgBubble.appendChild(lir); 
         li.scrollIntoView(false);
