@@ -27,6 +27,6 @@ The proposed architecture is using PUBSUB to endpoints which doesn't have the re
 
 ![image](https://user-images.githubusercontent.com/52392004/82962567-89756000-9ffb-11ea-8e5a-7eb737fd6f37.png)
 
-where Sender will publish to Receiver directly.
+where Sender will publish to Receiver directly and message can be delivered consistently even if Receiver is offline.
 
 
