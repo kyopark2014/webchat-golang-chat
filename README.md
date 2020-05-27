@@ -13,8 +13,12 @@ Once one of client in a chatroom is not online, PUBSUB is not a good way to comm
 
 ### PUBSUB Redundancy
 
-For one-to-one chat, the published message from the sender will return the message since the sender also do SUBSCRIBE into PUBSUB server.
-It may be used for acknowlegement for the sent message. But it also makes a trouble to manage UI because the user experience prefer to use lagacy message experience where it can show if the message is failed to sent by some reason, it should be deplayed in the chat dialog so that the user can recognize and try again if needs.
+For one-to-one chat, published messages from Sender will return since the sender also do SUBSCRIBE into PUBSUB server.
+It may be used for acknowlegement for the sent message. But it also requires special management for UI because an user usually prefers to use legacy message experience where it should show if a message is failed to sent by some reason, it should be displayed in the chat dialog so that the user can recognize and then try again if needs.
 So, I think it is a redundacy for PUBSUB when it is applied for one-to-one chat.
 
-The proposed archecture is using PUBSUB to the endpoints which has benefits for noticing the received message and can manage connections for chat rooms since the chat session can managed one between a client and a server.
+![image](https://user-images.githubusercontent.com/52392004/82961368-1f0ef080-9ff8-11ea-8c0e-cf5bd1e0b301.png)
+
+The proposed archecture is using PUBSUB to the endpoints which desn't have the redundancy and some of benefits to notice the received message and also manages a connection for multiple chat rooms.
+
+
