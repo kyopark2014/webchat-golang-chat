@@ -17,7 +17,7 @@ For one-to-one chat, published messages from Sender will return since the sender
 It may be used for acknowlegement for the sent message. But it also requires special management for UI because an user usually prefers to use legacy message experience where it should show if a message is failed to sent by some reason, it should be displayed in the chat dialog so that the user can recognize and then try again if needs.
 So, I think it is a redundacy for PUBSUB when it is applied for one-to-one chat.
 
-![image](https://user-images.githubusercontent.com/52392004/82962457-3e5b4d00-9ffb-11ea-986a-970a470c6ad3.png)
+![image](https://user-images.githubusercontent.com/52392004/82962776-2801c100-9ffc-11ea-91bc-ebb94843d553.png)
 
 where Sender and Receiver are subscribed to a chat room with chat-id.
 
