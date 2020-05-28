@@ -34,6 +34,8 @@ func InitServer(conf *config.AppConfig) error {
 		log.E("%v", err)
 	}
 
+	userMap := make(map[string]string) // hashmap to memorize the pair of socket id and user id
+
 	server.On("connection", func(so socketio.Socket) {
 		log.D("connected... %v", so.Id())
 
@@ -43,8 +45,18 @@ func InitServer(conf *config.AppConfig) error {
 			newMessages <- msg
 		})
 
+		// var quit chan struct{}
+		quit := make(chan struct{})
+
 		so.On("disconnection", func() {
 			log.D("disconnected... %v", so.Id())
+
+			delete(userMap, so.Id())
+			close(quit)
+
+			for s, u := range userMap {
+				log.D("Last session: %v, uid: %v", s, u)
+			}
 		})
 
 		userEvent := make(chan Event, 10)
@@ -52,44 +64,60 @@ func InitServer(conf *config.AppConfig) error {
 
 		so.On("join", func(user string) {
 			log.D("Join...%v (%v)", user, so.Id())
+
+			for s, u := range userMap {
+				log.D("session: %v, uid: %v", s, u)
+				if u == user { // delete duplicated session
+					delete(userMap, s)
+
+					log.D("%v is trying to join again!", user)
+				}
+			}
+
+			userMap[so.Id()] = user
+			log.D("SUBSCRIBE request: %v", user)
 			subscribeEvent(user, userEvent)
+
+			// make connection with redis server
+			go func() { // server <-> QUEUE / PUBSUB
+				for {
+					select {
+					case event := <-receive: //
+						log.D("sent message: %v", event.Text)
+
+						// To-Do: check the validity of receiver
+						// To-Do: lpush to QUEUE
+						// pushEvent(&event)
+						//getEventList(event.From)
+
+						// publish to PUBSUB
+						publishEvent(&event)
+
+					case <-quit:
+						return
+					}
+				}
+			}()
+
+			go func() { // cient <-> server (WEB Socket)
+				for {
+					select {
+					case event := <-userEvent: // sending event to client(browser)
+						log.D("sending event to browsers: %v %v %v %v %v (%v)", event.EvtType, event.From, event.To, event.Timestamp, event.Text, so.Id())
+						so.Emit("chat", event)
+
+					case msg := <-newMessages: // received message from client(browser)
+						var newMSG data.Message
+						json.Unmarshal([]byte(msg), &newMSG)
+						log.D("receiving message from browser: %v %v %v %v (%v)", newMSG.From, newMSG.To, newMSG.Timestamp, newMSG.Message, so.Id())
+
+						receive <- NewEvent("message", newMSG.From, newMSG.To, int(newMSG.Timestamp), newMSG.Message)
+					case <-quit:
+						return
+					}
+				}
+			}()
 		})
-
-		// make connection with redis server
-		go func() { // server <-> QUEUE / PUBSUB
-			for {
-				select {
-				case event := <-receive: //
-					log.D("sent message: %v", event.Text)
-
-					// To-Do: check the validity of receiver
-					// To-Do: lpush to QUEUE
-					// pushEvent(&event)
-					//getEventList(event.From)
-
-					// publish to PUBSUB
-					publishEvent(&event)
-				}
-			}
-
-		}()
-
-		go func() { // cient <-> server (WEB Socket)
-			for {
-				select {
-				case event := <-userEvent: // sending event to client(browser)
-					log.D("sending event to browsers: %v %v %v %v %v (%v)", event.EvtType, event.From, event.To, event.Timestamp, event.Text, so.Id())
-					so.Emit("chat", event)
-
-				case msg := <-newMessages: // received message from client(browser)
-					var newMSG data.Message
-					json.Unmarshal([]byte(msg), &newMSG)
-					log.D("receiving message from browser: %v %v %v %v (%v)", newMSG.From, newMSG.To, newMSG.Timestamp, newMSG.Message, so.Id())
-
-					receive <- NewEvent("message", newMSG.From, newMSG.To, int(newMSG.Timestamp), newMSG.Message)
-				}
-			}
-		}()
 	})
 
 	http.HandleFunc("/socket.io/", func(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +186,7 @@ func subscribeEvent(channel string, e chan Event) {
 				log.E("%v: %v", channel, errJSON)
 			}
 
-			e <- event
+			e <- event // send event
 
 			/*	if event == nil {
 					log.D("No cache in Redis")

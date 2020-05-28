@@ -132,7 +132,7 @@ func Subscribe(channel string, d chan []byte) error {
 
 		// Set up subscriptions
 		if err := psc.Subscribe(channel); err != nil {
-			log.E("subscribe error: %v", err.Error)
+			log.E("Subscribe error: %v", err.Error)
 		}
 
 		// While not a permanent error on the connection.
@@ -142,12 +142,13 @@ func Subscribe(channel string, d chan []byte) error {
 				d <- v.Data
 				log.D("message: %s %s\n", v.Channel, v.Data)
 			case redis.Subscription:
-				log.D("subscribed: %s %s %d\n", v.Channel, v.Kind, v.Count)
+				log.E("subscribed: %s %s %d\n", v.Channel, v.Kind, v.Count)
 			case error:
-				log.D("%v", error.Error)
+				log.E("%v", error.Error)
 				return
 			}
 		}
+
 		psc.Unsubscribe()
 		c.Close()
 	}()

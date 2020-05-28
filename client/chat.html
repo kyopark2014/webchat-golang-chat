@@ -28,64 +28,16 @@
             </div>
           </div>
 
-          <div class="friend-drawer friend-drawer--onhover">
-            <img class="profile-image" src="basicprofile.jpg" alt="">
-            <div class="text">
-              <h6>Robo Cop</h6>
-              <p class="text-muted">Hey, you're arrested!</p>
-            </div>
-            <span class="time text-muted small">13:21</span>
-          </div>
-
-          <hr>
-            <div class="friend-drawer friend-drawer--onhover">
-            <img class="profile-image" src="basicprofile.jpg" alt="">
+          <div class="friend-panel" id="msgList">
+            <div class="friend-drawer friend-drawer--onhover" id="current">
+              <img class="profile-image" src="basicprofile.jpg" alt="">
               <div class="text">
-              <h6>Optimus</h6>
-              <p class="text-muted">Wanna grab a beer?</p>
+                <h6 id="currentConvUserName"></h6>
+                <p class="text-muted" id="lastMsg"></p>
               </div>
-              <span class="time text-muted small">00:32</span>
+              <span class="time text-muted small" id="lastMsgTimestamp"></span>
             </div>
-          <hr>
-
-          <div class="friend-drawer friend-drawer--onhover ">
-            <img class="profile-image" src="basicprofile.jpg" alt="">
-            <div class="text">
-              <h6>Skynet</h6>
-              <p class="text-muted">Seen that canned piece of s?</p>
-            </div>
-            <span class="time text-muted small">13:21</span>
-          </div>
-
-          <hr>
-          <div class="friend-drawer friend-drawer--onhover">
-            <img class="profile-image" src="basicprofile.jpg" alt="">
-            <div class="text">
-              <h6>Termy</h6>
-              <p class="text-muted">Im studying spanish...</p>
-            </div>
-            <span class="time text-muted small">13:21</span>
-          </div>
-        
-          <hr>
-          <div class="friend-drawer friend-drawer--onhover">
-            <img class="profile-image" src="basicprofile.jpg" alt="">
-            <div class="text">
-              <h6>Richard</h6>
-              <p class="text-muted">I'm not sure...</p>
-            </div>
-            <span class="time text-muted small">13:21</span>
-          </div>
-      
-          <hr>
-          <div class="friend-drawer friend-drawer--onhover">
-            <img class="profile-image" src="basicprofile.jpg" alt="">
-            <div class="text">
-              <h6>XXXXX</h6>
-              <p class="text-muted">Hi, wanna see something?</p>
-            </div>
-            <span class="time text-muted small">13:21</span>
-          </div>
+          </div> 
         </div>
 
         <div class="col-md-8">
@@ -93,42 +45,35 @@
             <div class="friend-drawer no-gutters friend-drawer--grey">
               <img class="profile-image" src="basicprofile.jpg" alt="">
               <div class="text">
-                <h6>Robo Cop</h6>
-                <p class="text-muted">cap@gmail.com</p>
+                <h6 id="currentConvUserName"></h6>
+                <p class="text-muted" id=currentConvUserId></p>
               </div>
               <span class="settings-tray--right">
                 <i class="material-icons">cached</i>
-                <i class="material-icons">message</i>
                 <i class="material-icons">menu</i>
               </span>
             </div>
           </div>
 
-          <div class="chat-panel">
-    <!--      <div class="row no-gutters">
-              <div class="col-md-3">
-                <div class="chat-bubble chat-bubble--left">
-                receive1! Hi hello dude!!
-                </div>
-              </div>
-            </div>
+          <div class="test">
+          <!--
+          <div class="chat-sender chat-sender--right">
+            <h1>14:15:22</h1> Hello dude!
+          </div> 
+          <div class="chat-receiver chat-receiver--left">
+            <h1>user name</h1><h2>14:22:33</h2>Hello dude! 
+          </div> -->
+          
 
-            <div class="row no-gutters">
-              <div class="col-md-3 offset-md-9">
-                <div class="chat-bubble chat-bubble--right">
-                send1!
-                </div>
-              </div>
-            </div>  -->
-      
-            <ul id="msgBubble"></ul> 
-
-          </div>
-          <div class="row">
+          <div class="chat-panel" id="chatPanel"></div>
+        </div>
+          
+         <div class="row">
             <div class="col-12">
               <div class="chat-box-tray">
                 <i class="material-icons">sentiment_very_satisfied</i>
                 <input type="text" id="chatInput" placeholder="Type your message here...">
+
                 <span class="settings-tray--right">
                 <i class="material-icons" id="attachFile">attach_file</i>       
                 </span>
@@ -147,6 +92,7 @@
     <script id="rendered-js">
       $('.friend-drawer--onhover').on('click', function () {
         $('.chat-bubble').hide('slow').show('slow');
+        // console.log($('.friend-drawer--onhover').text)
       });
     </script>
   </body>
