@@ -10,8 +10,9 @@ type UserProfile struct {
 
 // Message is the data structure of messages
 type Message struct {
+	EvtType   string
 	From      string
 	To        string
 	Timestamp int
-	Message   string
+	Text      string
 }

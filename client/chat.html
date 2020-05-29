@@ -29,15 +29,8 @@
           </div>
 
           <div class="friend-panel" id="msgList">
-            <div class="friend-drawer friend-drawer--onhover" id="current">
-              <img class="profile-image" src="basicprofile.jpg" alt="">
-              <div class="text">
-                <h6 id="currentConvUserName"></h6>
-                <p class="text-muted" id="lastMsg"></p>
-              </div>
-              <span class="time text-muted small" id="lastMsgTimestamp"></span>
-            </div>
-          </div> 
+            
+          </div>
         </div>
 
         <div class="col-md-8">
@@ -45,8 +38,8 @@
             <div class="friend-drawer no-gutters friend-drawer--grey">
               <img class="profile-image" src="basicprofile.jpg" alt="">
               <div class="text">
-                <h6 id="currentConvUserName"></h6>
-                <p class="text-muted" id=currentConvUserId></p>
+                <h6 id="calleeName"></h6>
+                <p class="text-muted" id=calleeId></p>
               </div>
               <span class="settings-tray--right">
                 <i class="material-icons">cached</i>
@@ -90,9 +83,9 @@
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
     <script src="chat.js"></script>
     <script id="rendered-js">
-      $('.friend-drawer--onhover').on('click', function () {
+      $('.friend-drawer--onhover').on('click', function (e) {
         $('.chat-bubble').hide('slow').show('slow');
-        // console.log($('.friend-drawer--onhover').text)
+        //console.log('selected:'+document.querySelector($('.friend-drawer--onhover')).textContent);
       });
     </script>
   </body>

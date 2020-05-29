@@ -109,9 +109,9 @@ func InitServer(conf *config.AppConfig) error {
 					case msg := <-newMessages: // received message from client(browser)
 						var newMSG data.Message
 						json.Unmarshal([]byte(msg), &newMSG)
-						log.D("receiving message from browser: %v %v %v %v (%v)", newMSG.From, newMSG.To, newMSG.Timestamp, newMSG.Message, so.Id())
+						log.D("receiving message from browser: %v %v %v %v (%v)", newMSG.From, newMSG.To, newMSG.Timestamp, newMSG.Text, so.Id())
 
-						receive <- NewEvent("message", newMSG.From, newMSG.To, int(newMSG.Timestamp), newMSG.Message)
+						receive <- NewEvent("message", newMSG.From, newMSG.To, int(newMSG.Timestamp), newMSG.Text)
 					case <-quit:
 						return
 					}
