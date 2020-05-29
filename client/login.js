@@ -16,7 +16,7 @@ if(name != '')    {
 
 var phonenumber = localStorage.getItem('phonenumber'); // set userID if exists 
 if(phonenumber != '')    {
-    phonenumberInput.value = phonenumber;
+    phonenumberInput.value = email;
 }
 
 function onSubmit(e) {
@@ -35,7 +35,9 @@ function onSubmit(e) {
         localStorage.setItem('name',nameInput.value);
         localStorage.setItem('phonenumber',phonenumberInput.value);
 
-    //    window.opener.setName(nameInput.value);
+        // clear fields
+        // nameInput.value = '';
+        // phonenumberInput.value = '';
 
         window.location.href = "chat.html";
     }

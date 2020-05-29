@@ -24,7 +24,7 @@ if(uid != '')    {
     console.log('joined: '+uid);
 }
 
-var dest = uid;  // initial: self chat To-Do: read it from DB
+var dest;
 
 // To-do: load current conversation profile from the conversation list 
 let convPartner = uid;
@@ -80,16 +80,15 @@ newConversation.addEventListener('click', function(){
     var popUrl = "invite.html";	
 	var popOption = "width=370, height=360, resizable=no, scrollbars=no, status=no;";    
         window.open(popUrl,"",popOption);
+        
+
 });
 
-function setDest(value) {
-    console.log('Destination: '+value);
+function setValue(value) {
+    // do your logic here
+    console.log('transfered value: '+value);
     dest = value;
-
-    currentConvUserName.textContent = dest;
-    currentConvUserId.textContent = dest;
-    // if there is no recored with dest, create a call log
-}
+ }
 
 function onSend(e) {
     e.preventDefault();
@@ -137,10 +136,7 @@ socket.on('chat', function(data){
     console.log("web: " + data.Text);
   
     if(data.EvtType == 'message') {
-        // if received data is from unknown user, create a chat log
-
-
-        // show received message
+        // show receive message
         addReceiverMessage(data.From,timestr,data.Text);  // To-Do: data.From -> Name
 
         // update recent conversation list

@@ -36,9 +36,9 @@ function onInvite() {
   if (phoneNumber.value != '') {
     localStorage.setItem('to', phoneNumber.value)  
   }
-  console.log('Destination: ' + phoneNumber.value);
+  console.log('selected number: ' + phoneNumber.value);
 
-  window.opener.setDest(phoneNumber.value);
+  window.opener.setValue(phoneNumber.value);
 
   self.close();
 };
