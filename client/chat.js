@@ -79,6 +79,7 @@ HashMap.prototype = {
 var socket = io.connect('http://localhost:4000');
 
 // Documents
+const title = document.querySelector('#title');
 const sendBtn = document.querySelector('#sendBtn');
 const message = document.querySelector('#chatInput')
 const attachFile = document.querySelector('#attachFile');
@@ -94,25 +95,29 @@ var uid = localStorage.getItem('phonenumber'); // set userID if exists
 if(uid != '')    {
     socket.emit('join',uid);  
     console.log('joined: '+uid);
+
+    title.textContent = 'CHAT '+uid; 
 }
 
 // variables
-var map = new HashMap();   // call data
-var list = [];    // call log list
+var map = new HashMap();   // hashmap for call history
+var list = [];    // list of call log
+
 var index = 0;    // # of call log lists
 var callee = uid;  // current conversation partner
+var idx = new HashMap();   // hashmap for index
 
-// initialize call list map
-var idx = new HashMap();
-idx.put(callee, index);
+var listparam = []; // the params of list
 
-var listparam = [];
+assignNewCallLog(callee);  // make a call log for callee
 
-AssignCallList(callee);
+function assignNewCallLog(id) {
+    map.put(id, new Queue());
+    idx.put(id, index);
+    index++;   
 
-function AssignCallList(id) {
     var param = ['',''];  // parma[0] = text, param[1] = timestr
-    listparam[idx.get(callee)] = param;
+    listparam[idx.get(id)] = param;
 
     var from = id;
     console.log('from: '+from);
@@ -123,7 +128,7 @@ function AssignCallList(id) {
     var timestr = from+'_timestr';
     console.log('timestr: '+timestr);
     
-    msgList.innerHTML = 
+    msgList.innerHTML += 
         `<div class="friend-drawer friend-drawer--onhover" id="${from}">
             <img class="profile-image" src="basicprofile.jpg" alt="">
             <div class="text">
@@ -136,32 +141,34 @@ function AssignCallList(id) {
     listparam[idx.get(id)][0] = document.getElementById(text);
     listparam[idx.get(id)][1] = document.getElementById(timestr);    
 
-    // Once the call log is selected, update the chatroom 
-    list[index] = document.getElementById(id);
-    if(list[index]) {
-        list[index].addEventListener('click',function() {
-            console.log('chatroom:'+ callee);
+    // add listener    
+    list[idx.get(id)] = document.getElementById(from);
+   // document.querySelector('#msgList');
+    // if(!list[idx.get(id)]) {
+        list[idx.get(id)].addEventListener('click',function() {
+            console.log('chatroom: '+idx.get(id)+' ('+id+')');
 
             setConveration(id);
             updateChatWindow(id);
         },false); 
-    }     
-    index++;   
+    //}         
 }
 
 // initialize 
 setConveration(callee);
 updateChatWindow(callee);
 
-
-// earn the desternation number
+// earn the desternation number from "invite.html"
 function setDest(id) {
     console.log('Destination: '+id);
     callee = id;
 
-    if(!map.get(id)) {
-        AssignCallList(id);
+    if(!map.get(callee)) {
+        assignNewCallLog(callee);
     }
+
+    setConveration(callee);
+    updateChatWindow(callee);
 }
 
 // Listeners
@@ -216,18 +223,8 @@ function onSend(e) {
         socket.emit('chat', msgJSON);
 
         // save the sent message
-        var updateRequired = false;
-        if(!map.get(callee)) {
-            map.put(callee, new Queue());
-            updateRequired = true;
-            
-            console.log('Create hashmap table: '+callee);
-        }
-
         var q = map.get(callee);
         q.push(chatmsg);
-
-        if(updateRequired) updateCalllog();
 
         console.log('sent message: ' + callee + ':' + q.size());
     }
@@ -235,12 +232,12 @@ function onSend(e) {
     message.value = "";
 }
 
-// set the address of callee
+// receive the id of callee from "invite.html"
 function setConveration(id) {
     console.log('callee: '+ id);
     callee = id;
 
-    calleeName.textContent = 'Name'+id;
+    calleeName.textContent = 'Name'+id;  // To-do: next time, it will be earn from the profile server
     calleeId.textContent = id;
 }
 
@@ -259,7 +256,7 @@ function addReceiverMessage(sender,timestr, msg) {
 }
 
 
-// Listen for events 
+// Listen events to receive a message
 socket.on('chat', function(data){
     var date = new Date(data.Timestamp * 1000);
     var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
@@ -267,42 +264,23 @@ socket.on('chat', function(data){
     console.log("web: " + data.Text);
   
     if(data.EvtType == 'message') {
-        // if received data is from unknown user, create a chat log
-        var updateRequired = false;
+        // if the sender is not in call list, create a call log
         if(!map.get(data.From)) {
-            map.put(data.From, new Queue());
-            updateRequired = true;
-            
+            assignNewCallLog(data.From);      
+
             console.log('New hashmap table was created: '+data.From);
         }
 
         var q = map.get(data.From);
         q.push(data);
 
-        if(updateRequired) {
-            // update call list
-            updateCalllog();
-
-            // define listener
-            list[index] = document.getElementById(data.From);
-
-            if(list[index]) {
-                list[index].addEventListener('click',function() {
-                    console.log('chatroom:'+ data.From);
-
-                    setConveration(data.From);
-                    updateChatWindow(data.From);
-                },false); 
-            }           
-            index++;
-        }
-
         // show received message
-        addReceiverMessage(data.From,timestr,data.Text);  // To-Do: data.From -> Name
+        if(callee == data.From)
+            addReceiverMessage(data.From,timestr,data.Text);  // To-Do: data.From -> Name
 
         // update the call log 
-    //    recent.textContent = data.Text;
-    //    recentTimestamp.textContent = timestr;
+        listparam[idx.get(data.From)][0].textContent = data.Text; 
+        listparam[idx.get(data.From)][1].textContent = timestr;
     }
 });
 
@@ -312,48 +290,47 @@ function updateCalllog() {
     
     msgList.innerHTML = '';    
     for(i=0;i<keys.length;i++) {
-        console.log('key: ' +keys[i]);
+        console.log('key: '+keys[i]);
+
         var q = map.get(keys[i]);
-        var v = q.recent;
 
-        console.log('From: ' + v.From + ' Text: '+q.recent.Text);
+        if(!q) {
+            console.log('From: ' + q.recent.From + ' Text: '+q.recent.Text);
 
-        from = q.recent.From;
-        text = q.recent.Text;
-        var date = new Date(q.recent.Timestamp * 1000);
-        var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
+            from = q.recent.From;
+            text = q.recent.Text;
+            var date = new Date(q.recent.Timestamp * 1000);
+            var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-        console.log(`<div class="friend-drawer friend-drawer--onhover" id="${from}">
-            <img class="profile-image" src="basicprofile.jpg" alt="">
-            <div class="text">
-                <h6>${from}</h6>
-            <p class="text-muted">${text}</p>
-            </div>
-            <span class="time text-muted small">${timestr}</span>
-        </div>`);
-
-        msgList.innerHTML += 
-            `<div class="friend-drawer friend-drawer--onhover" id="${from}">
+            console.log(`<div class="friend-drawer friend-drawer--onhover" id="${from}">
                 <img class="profile-image" src="basicprofile.jpg" alt="">
                 <div class="text">
                     <h6>${from}</h6>
                 <p class="text-muted">${text}</p>
                 </div>
                 <span class="time text-muted small">${timestr}</span>
-            </div>`;       
+            </div>`);
+
+            msgList.innerHTML += 
+                `<div class="friend-drawer friend-drawer--onhover" id="${from}">
+                    <img class="profile-image" src="basicprofile.jpg" alt="">
+                    <div class="text">
+                        <h6>${from}</h6>
+                    <p class="text-muted">${text}</p>
+                    </div>
+                    <span class="time text-muted small">${timestr}</span>
+                </div>`;       
+        }
     }
 }
 
 function updateChatWindow(from) {
-    console.log('clicked!');
-
-    if(map.get(from)) {    
-        chatPanel.innerHTML = ''; // clear window
-        var q = map.get(from);
-        console.log("recent: ",q.recent.From);
-        
+    chatPanel.innerHTML = ''; // clear window
+ 
+    var q = map.get(from);    
+    if(q) {            
         var size = q.size();
-        console.log(size);
+        console.log('QUEUE size: '+ size);
         for(i=0;i<size;i++) {
             var v = q.front();
             q.pop();
@@ -363,15 +340,12 @@ function updateChatWindow(from) {
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
             addReceiverMessage(v.data.From,timestr,v.data.Text);  // To-Do: data.From -> Name         
 
-            if(i==size-1) {
-        //        calleeName.textContent = v.data.From;    
-        //        calleeId.textContent = v.data.From;
-                list[callee].textContent = v.data.Text;
-                list[callee].Timestamp.textContent = timestr;       
-            }
+       /*     if(i==size-1) {
+                listparam[idx.get(from)][0].textContent = Text; 
+                listparam[idx.get(from)][1].textContent = timestr;
+            } */
         }
     } 
-    // showCalllog();
 }
 
 // Listen for events 
