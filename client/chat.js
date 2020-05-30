@@ -88,6 +88,9 @@ const newConversation = document.querySelector('#newConversation');  // To input
 const chatPanel = document.querySelector('#chatPanel');
 const calleeProfile = document.querySelector('#calleeProfile');
 
+const refreshCallLog = document.querySelector('#refreshCallLog');
+const refreshChatWindow = document.querySelector('#refreshChatWindow');
+
 // To-Do: uname and uid need to get from the index.html for security
 var uname = localStorage.getItem('name'); // set userID if exists 
 var uid = localStorage.getItem('phonenumber'); // set userID if exists 
@@ -98,12 +101,15 @@ if(uid != '')    {
     title.textContent = 'CHAT '+uid; 
 }
 
+// database: To-Do: it will replated to indexed database
+var msgHistory = new HashMap();
+
 // variables
 var map = new HashMap();   // hashmap for call history
 var list = [];    // list of call log
 
 var index = 0;    // # of call log lists
-var callee = uid;  // current conversation partner
+var callee = -1;  // current conversation partner
 var idx = new HashMap();   // hashmap for index
 
 var listparam = []; // the params of list
@@ -115,43 +121,48 @@ for (i=0;i<20;i++) {
 assignNewCallLog(callee);  // make a call log for callee
 
 function assignNewCallLog(id) {
-    map.put(id, new Queue());
-    idx.put(id, index);
-    index++;   
-    
-    from = id;
-    console.log('from: '+ from + ' index: '+idx.get(from) );
+    if(id != -1) {
+        map.put(id, new Queue());
+        idx.put(id, index);
+        index++;   
+        
+        from = id;
+        console.log('from: '+ from + ' index: '+idx.get(from) );
 
-    list[idx.get(from)].innerHTML = 
-    `<div class="friend-drawer friend-drawer--onhover">
-        <img class="profile-image" src="basicprofile.jpg" alt="">
-        <div class="text">
-            <h6 id='${from}_name'></h6>
-        <p class="text-muted" id="${from}_text"></p>
-        </div>
-        <span class="time text-muted small" id="${from}_timestr"></span>
-    </div>`;     
-    
-    var param = ['','',''];  // param[0] = name, parma[0] = text, param[1] = timestr
-    listparam[idx.get(from)] = param;
-    listparam[idx.get(from)][0] = document.getElementById(from+'_name');
-    listparam[idx.get(from)][1] = document.getElementById(from+'_text');
-    listparam[idx.get(from)][2] = document.getElementById(from+'_timestr');    
+        list[idx.get(from)].innerHTML = 
+        `<div class="friend-drawer friend-drawer--onhover">
+            <img class="profile-image" src="basicprofile.jpg" alt="">
+            <div class="text">
+                <h6 id='${from}_name'></h6>
+            <p class="text-muted" id="${from}_text"></p>
+            </div>
+            <span class="time text-muted small" id="${from}_timestr"></span>
+        </div>`;     
+        
+        var param = ['','',''];  // param[0] = name, parma[0] = text, param[1] = timestr
+        listparam[idx.get(from)] = param;
+        listparam[idx.get(from)][0] = document.getElementById(from+'_name');
+        listparam[idx.get(from)][1] = document.getElementById(from+'_text');
+        listparam[idx.get(from)][2] = document.getElementById(from+'_timestr');    
 
-    listparam[idx.get(from)][0].textContent = from;
-    
-    // add listener        
-    (function(index, name) {
-        list[index].addEventListener("click", function() {
-            console.log('index: '+index);
-            console.log('--> chatroom: '+idx.get(name)+' ('+name+')');
+        listparam[idx.get(from)][0].textContent = from;
+        
+        // add listener        
+        (function(index, name) {
+            list[index].addEventListener("click", function() {
+                console.log('index: '+index);
+                console.log('--> chatroom: '+idx.get(name)+' ('+name+')');
 
-            setConveration(name);
-            updateChatWindow(name); 
-        })
-    })(idx.get(from),from);
+                setConveration(name);
+                updateChatWindow(name); 
+            })
+        })(idx.get(from),from);
 
-    console.log('calllog: '+list[idx.get(from)].innerHTML);
+
+        // make a history
+        if(!msgHistory.get(callee))
+            msgHistory.put(from, new Array())
+    }
 }
 
 function updateCalllog() {
@@ -205,9 +216,17 @@ message.addEventListener('keyup', function(e){
     }
 });
 
-attachFile.addEventListener('click', function(){
+refreshCallLog.addEventListener('click', function(){
+    console.log('update call logs');
     updateCalllog();
+});
 
+refreshChatWindow.addEventListener('click', function(){
+    console.log('update chat window');
+    updateChatWindow(callee);
+});
+
+attachFile.addEventListener('click', function(){
     var input = $(document.createElement('input')); 
     input.attr("type", "file");
     input.trigger('click');
@@ -225,7 +244,7 @@ sendBtn.addEventListener('click', onSend);
 function onSend(e) {
     e.preventDefault();
 
-    if(message.value != '') {
+    if(message.value != '' && callee != -1) {
         var date = new Date();
         var timestamp = Math.floor(date.getTime()/1000);
             
@@ -264,11 +283,13 @@ function onSend(e) {
 
 // receive the id of callee from "invite.html"
 function setConveration(id) {
-    console.log('callee: '+ id);
-    callee = id;
+    if(id != -1) {
+        console.log('callee: '+ id);
+        callee = id;
 
-    calleeName.textContent = 'Name'+id;  // To-do: next time, it will be earn from the profile server
-    calleeId.textContent = id;
+        calleeName.textContent = 'Name'+id;  // To-do: next time, it will be earn from the profile server
+        calleeId.textContent = id;
+    }
 }
 
 function addSenderMessage(timestr,msg) {
@@ -303,35 +324,58 @@ socket.on('chat', function(data){
 
         var q = map.get(data.From);
         q.push(data);
-
+        
         // show received message
+        if(callee == -1) {
+            callee = data.From;
+
+            setConveration(callee);
+            updateChatWindow(callee); 
+        }
+
         if(callee == data.From)
             addReceiverMessage(data.From,timestr,data.Text);  // To-Do: data.From -> Name
 
         // update the call log 
-        listparam[idx.get(callee)][0].textContent = callee; 
-        listparam[idx.get(callee)][1].textContent = data.Text; 
-        listparam[idx.get(callee)][2].textContent = timestr;
+        listparam[idx.get(data.From)][0].textContent = data.From; 
+        listparam[idx.get(data.From)][1].textContent = data.Text; 
+        listparam[idx.get(data.From)][2].textContent = timestr;
     }
 });
 
 function updateChatWindow(from) {
-    chatPanel.innerHTML = ''; // clear window
- 
-    var q = map.get(from);    
-    if(q) {            
-        var size = q.size();
-        console.log('QUEUE size: '+ size);
-        for(i=0;i<size;i++) {
-            var v = q.front();
-            q.pop();
-            console.log(v.data);
+    if(from != -1) {
+        chatPanel.innerHTML = ''; // clear window
+        callLog = msgHistory.get(from);
 
-            var date = new Date(v.data.Timestamp * 1000);
+        var q = map.get(from);    
+        if(q) {            
+            var size = q.size();
+            console.log('QUEUE size: '+ size);
+            for(i=0;i<size;i++) {
+                var v = q.front();
+                q.pop();
+                console.log(v.data);
+
+                // push to database            
+                callLog.push(v.data)
+            }
+        } 
+
+        // shows 50 messages based on arrived order    
+        if(callLog.length < 50) start = 0;
+        else start = callLog.length - 50;
+
+        for(i=start;i<callLog.length;i++) {
+            var date = new Date(callLog[i].Timestamp * 1000);
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
-            addReceiverMessage(v.data.From,timestr,v.data.Text);  // To-Do: data.From -> Name         
+
+            if(callLog[i].From == uid)
+                addSenderMessage(timestr,callLog[i].Text);
+            else 
+                addReceiverMessage(callLog[i].From,timestr,callLog[i].Text);  // To-Do: data.From -> Name       
         }
-    } 
+    }
 }
 
 // Listen for events 
