@@ -85,7 +85,6 @@ const message = document.querySelector('#chatInput')
 const attachFile = document.querySelector('#attachFile');
 const newConversation = document.querySelector('#newConversation');  // To input callee number
 
-const msgList = document.querySelector('#msgList');
 const chatPanel = document.querySelector('#chatPanel');
 const calleeProfile = document.querySelector('#calleeProfile');
 
@@ -109,49 +108,77 @@ var idx = new HashMap();   // hashmap for index
 
 var listparam = []; // the params of list
 
+for (i=0;i<20;i++) {
+    list.push(document.getElementById('callLog'+i));
+}
+
 assignNewCallLog(callee);  // make a call log for callee
 
 function assignNewCallLog(id) {
     map.put(id, new Queue());
     idx.put(id, index);
     index++;   
-
-    var param = ['',''];  // parma[0] = text, param[1] = timestr
-    listparam[idx.get(id)] = param;
-
-    var from = id;
-    console.log('from: '+from);
     
-    var text = from+'_text';
-    console.log('text: '+text);
-    
-    var timestr = from+'_timestr';
-    console.log('timestr: '+timestr);
-    
-    msgList.innerHTML += 
-        `<div class="friend-drawer friend-drawer--onhover" id="${from}">
-            <img class="profile-image" src="basicprofile.jpg" alt="">
-            <div class="text">
-                <h6>${from}</h6>
-            <p class="text-muted" id="${text}"></p>
-            </div>
-            <span class="time text-muted small" id="${timestr}"></span>
-        </div>`;  
-    
-    listparam[idx.get(id)][0] = document.getElementById(text);
-    listparam[idx.get(id)][1] = document.getElementById(timestr);    
+    from = id;
+    console.log('from: '+ from + ' index: '+idx.get(from) );
 
-    // add listener    
-    list[idx.get(id)] = document.getElementById(from);
-   // document.querySelector('#msgList');
-    // if(!list[idx.get(id)]) {
-        list[idx.get(id)].addEventListener('click',function() {
-            console.log('chatroom: '+idx.get(id)+' ('+id+')');
+    list[idx.get(from)].innerHTML = 
+    `<div class="friend-drawer friend-drawer--onhover">
+        <img class="profile-image" src="basicprofile.jpg" alt="">
+        <div class="text">
+            <h6 id='${from}_name'></h6>
+        <p class="text-muted" id="${from}_text"></p>
+        </div>
+        <span class="time text-muted small" id="${from}_timestr"></span>
+    </div>`;     
+    
+    var param = ['','',''];  // param[0] = name, parma[0] = text, param[1] = timestr
+    listparam[idx.get(from)] = param;
+    listparam[idx.get(from)][0] = document.getElementById(from+'_name');
+    listparam[idx.get(from)][1] = document.getElementById(from+'_text');
+    listparam[idx.get(from)][2] = document.getElementById(from+'_timestr');    
 
-            setConveration(id);
-            updateChatWindow(id);
-        },false); 
-    //}         
+    listparam[idx.get(from)][0].textContent = from;
+    
+    // add listener        
+    (function(index, name) {
+        list[index].addEventListener("click", function() {
+            console.log('index: '+index);
+            console.log('--> chatroom: '+idx.get(name)+' ('+name+')');
+
+            setConveration(name);
+            updateChatWindow(name); 
+        })
+    })(idx.get(from),from);
+
+    console.log('calllog: '+list[idx.get(from)].innerHTML);
+}
+
+function updateCalllog() {
+    keys = map.getKeys();
+    console.log('key length: '+keys.length);
+
+    for(i=0;i<keys.length;i++) {
+        console.log('key: '+keys[i]);
+
+        var q = map.get(keys[i]);
+        from = keys[i];
+
+        if(!q) {
+            var text = q.recent.Text;
+            var date = new Date(q.recent.Timestamp * 1000);
+            var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
+
+            console.log('From: '+from+' Text: '+text+' Timestr: '+timestr);
+
+            listparam[idx.get(from)][0].textContent = from; 
+            listparam[idx.get(from)][1].textContent = text; 
+            listparam[idx.get(from)][2].textContent = timestr; 
+        } else {
+            from = keys[i];
+            listparam[idx.get(from)][0].textContent = from; 
+        }
+    }
 }
 
 // initialize 
@@ -179,6 +206,8 @@ message.addEventListener('keyup', function(e){
 });
 
 attachFile.addEventListener('click', function(){
+    updateCalllog();
+
     var input = $(document.createElement('input')); 
     input.attr("type", "file");
     input.trigger('click');
@@ -216,8 +245,9 @@ function onSend(e) {
         addSenderMessage(timestr,message.value);
 
         // update call log
-        listparam[idx.get(callee)][0].textContent = message.value; 
-        listparam[idx.get(callee)][1].textContent = timestr;
+        listparam[idx.get(callee)][0].textContent = callee; 
+        listparam[idx.get(callee)][1].textContent = message.value; 
+        listparam[idx.get(callee)][2].textContent = timestr; 
 
         // send the message
         socket.emit('chat', msgJSON);
@@ -279,50 +309,11 @@ socket.on('chat', function(data){
             addReceiverMessage(data.From,timestr,data.Text);  // To-Do: data.From -> Name
 
         // update the call log 
-        listparam[idx.get(data.From)][0].textContent = data.Text; 
-        listparam[idx.get(data.From)][1].textContent = timestr;
+        listparam[idx.get(callee)][0].textContent = callee; 
+        listparam[idx.get(callee)][1].textContent = data.Text; 
+        listparam[idx.get(callee)][2].textContent = timestr;
     }
 });
-
-function updateCalllog() {
-    keys = map.getKeys();
-    console.log('key length: '+keys.length);
-    
-    msgList.innerHTML = '';    
-    for(i=0;i<keys.length;i++) {
-        console.log('key: '+keys[i]);
-
-        var q = map.get(keys[i]);
-
-        if(!q) {
-            console.log('From: ' + q.recent.From + ' Text: '+q.recent.Text);
-
-            from = q.recent.From;
-            text = q.recent.Text;
-            var date = new Date(q.recent.Timestamp * 1000);
-            var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
-
-            console.log(`<div class="friend-drawer friend-drawer--onhover" id="${from}">
-                <img class="profile-image" src="basicprofile.jpg" alt="">
-                <div class="text">
-                    <h6>${from}</h6>
-                <p class="text-muted">${text}</p>
-                </div>
-                <span class="time text-muted small">${timestr}</span>
-            </div>`);
-
-            msgList.innerHTML += 
-                `<div class="friend-drawer friend-drawer--onhover" id="${from}">
-                    <img class="profile-image" src="basicprofile.jpg" alt="">
-                    <div class="text">
-                        <h6>${from}</h6>
-                    <p class="text-muted">${text}</p>
-                    </div>
-                    <span class="time text-muted small">${timestr}</span>
-                </div>`;       
-        }
-    }
-}
 
 function updateChatWindow(from) {
     chatPanel.innerHTML = ''; // clear window
@@ -339,11 +330,6 @@ function updateChatWindow(from) {
             var date = new Date(v.data.Timestamp * 1000);
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
             addReceiverMessage(v.data.From,timestr,v.data.Text);  // To-Do: data.From -> Name         
-
-       /*     if(i==size-1) {
-                listparam[idx.get(from)][0].textContent = Text; 
-                listparam[idx.get(from)][1].textContent = timestr;
-            } */
         }
     } 
 }
