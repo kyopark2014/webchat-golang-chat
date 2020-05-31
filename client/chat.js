@@ -56,21 +56,33 @@ if(uid != '')    {
     title.textContent = 'CHAT '+uid; 
 }
 
-// database: To-Do: it will replated to indexed database
-var msgHistory = new HashMap();
-
-// variables
-var list = [];    // list of call log
-
-var index = 0;    // # of call log lists
 var callee = -1;  // current conversation partner
-var idx = new HashMap();   // hashmap for index
 
-var listparam = []; // the params of list
-
+// call log
+var list = [];  
 for (i=0;i<20;i++) {
     list.push(document.getElementById('callLog'+i));
 }
+var index = 0;    // # of call log lists
+var listparam = []; // the params of list
+var idx = new HashMap();   // hashmap for index
+
+// initiate all elements of message log
+var msglist = [];
+var maxMsgItems = 50;
+for (i=0;i<maxMsgItems;i++) {
+    msglist.push(document.getElementById('msgLog'+i));
+
+    // add listener        
+    (function(index) {
+        msglist[index].addEventListener("click", function() {
+            console.log('click! index: '+index);
+        })
+    })(i);
+}
+
+// database: To-Do: it will replated to indexed database
+var msgHistory = new HashMap();
 
 assignNewCallLog(callee);  // make a call log for callee
 
@@ -107,11 +119,14 @@ function assignNewCallLog(id) {
         // add listener        
         (function(index, name) {
             list[index].addEventListener("click", function() {
-                console.log('index: '+index);
                 console.log('--> chatroom: '+idx.get(name)+' ('+name+')');
 
-                setConveration(name);
-                updateChatWindow(name); 
+                if(name != callee) {
+                    callee = name;
+
+                    setConveration(name);
+                    updateChatWindow(name);
+                } 
             })
         })(idx.get(from),from);
     }
@@ -211,17 +226,13 @@ function onSend(e) {
         const msgJSON = JSON.stringify(chatmsg);
         console.log(msgJSON);
     
-        // show the message
-        var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
-        addSenderMessage(timestr,message.value);
-
         // update call log
+        var date = new Date(timestamp * 1000);
+        var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
+
         listparam[idx.get(callee)][0].textContent = callee; 
         listparam[idx.get(callee)][1].textContent = message.value; 
         listparam[idx.get(callee)][2].textContent = timestr; 
-
-        // send the message
-        socket.emit('chat', msgJSON);
 
         // save the sent message
         const log = {
@@ -232,8 +243,12 @@ function onSend(e) {
         callLog = msgHistory.get(callee);
         callLog.push(log);
 
-        console.log('sent message: ' + callee + ':' + log);
-        console.log('from: ' + log.msg.From + ' msg: ' + log.msg.Text + ' timestamp: '+log.msg.Timestamp);
+        console.log('sent message: (from:' + log.msg.From + ' msg:' + log.msg.Text + ' timestamp:'+log.msg.Timestamp+')');
+
+        updateChatWindow(callee);
+
+        // send the message
+        socket.emit('chat', msgJSON);
     }
     
     message.value = "";
@@ -242,28 +257,10 @@ function onSend(e) {
 // receive the id of callee from "invite.html"
 function setConveration(id) {
     if(id != -1) {
-        console.log('callee: '+ id);
-        callee = id;
-
         calleeName.textContent = 'Name'+id;  // To-do: next time, it will be earn from the profile server
         calleeId.textContent = id;
     }
 }
-
-function addSenderMessage(timestr,msg) {
-    chatPanel.innerHTML += 
-    `<div class="chat-sender chat-sender--right"><h1>${timestr}</h1>${msg}</div>`;     
-  
-    chatPanel.scrollTop = chatPanel.scrollHeight;  // scroll needs to move bottom
-}
-
-function addReceiverMessage(sender,timestr, msg) {
-    chatPanel.innerHTML += 
-    `<div class="chat-receiver chat-receiver--left"><h1>${sender}</h1><h2>${timestr}</h2>${msg}</div>`;        
-
-    chatPanel.scrollTop = chatPanel.scrollHeight;  // scroll needs to move bottom
-}
-
 
 // Listen events to receive a message
 socket.on('chat', function(data){
@@ -295,8 +292,9 @@ socket.on('chat', function(data){
             updateChatWindow(callee); 
         }
 
-        if(callee == data.From)
-            addReceiverMessage(data.From,timestr,data.Text);  // To-Do: data.From -> Name
+        if(callee == data.From) {
+            updateChatWindow(callee);
+        }
 
         // update the call log 
         listparam[idx.get(data.From)][0].textContent = data.From; 
@@ -305,24 +303,53 @@ socket.on('chat', function(data){
     }
 });
 
+function addSenderMessage(index,timestr,msg) {
+//    console.log("add sent message: "+msg);
+
+    msglist[index].innerHTML = 
+        `<div class="chat-sender chat-sender--right"><h1>${timestr}</h1>${msg}</div>`;     
+    
+//    console.log(msglist[index].innerHTML);
+}
+
+function addReceiverMessage(index, sender,timestr, msg) {
+//    console.log("add received message: "+msg);
+
+    msglist[index].innerHTML =  
+    `<div class="chat-receiver chat-receiver--left"><h1>${sender}</h1><h2>${timestr}</h2>${msg}</div>`;     
+
+//    console.log(msglist[index].innerHTML);   
+}
+
 function updateChatWindow(from) {
     if(from != -1) {
-        chatPanel.innerHTML = ''; // clear window
+        // clear chat window
+        for (i=0;i<maxMsgItems;i++) {
+            msglist[i].innerHTML = '';
+        }
+
+        callee = from;
+
+        // load callLog
         callLog = msgHistory.get(from);
 
-        // shows 50 messages based on arrived order    
-        if(callLog.length < 50) start = 0;
-        else start = callLog.length - 50;
+        // shows maxMsgItems messages based on arrived order    
+        if(callLog.length < maxMsgItems) start = 0;
+        else start = callLog.length - maxMsgItems;
+
+        // console.log('start: '+start+' end: ' + callLog.length);
 
         for(i=start;i<callLog.length;i++) {
             var date = new Date(callLog[i].msg.Timestamp * 1000);
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
             if(callLog[i].logType == 1)
-                addSenderMessage(timestr,callLog[i].msg.Text);
+                addSenderMessage(i-start,timestr,callLog[i].msg.Text);
             else 
-                addReceiverMessage(callLog[i].msg.From,timestr,callLog[i].msg.Text);  // To-Do: data.From -> Name       
+                addReceiverMessage(i-start,callLog[i].msg.From,timestr,callLog[i].msg.Text);  // To-Do: data.From -> Name       
         }
+
+        chatPanel.scrollTop = chatPanel.scrollHeight;  // scroll needs to move bottom
     }
 }
 
