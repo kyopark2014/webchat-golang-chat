@@ -1,48 +1,3 @@
-Queue = function() {
-    this.first = null;
-    this.qsize = 0;
-    this.recent = null;
-}
-  
-Queue.prototype = {
-    size: function() {
-        return this.qsize;
-    },
-    isEmpty: function(){
-        return (this.qsize == 0);
-    },
-    push: function(data) {
-        var Node = function(data) {
-            this.data = data;
-            this.next = null;
-        };
-
-        var node = new Node(data);
-  
-        if (!this.first){
-            this.first = node;
-        } else {
-            n = this.first;
-            while (n.next) {
-                n = n.next;
-            }
-            n.next = node;
-        }
-    
-        this.qsize += 1;
-        this.recent = data;
-
-        return node;
-    },
-    front: function() {
-        return this.first;
-    },
-    pop: function() {
-        this.first = this.first.next;
-        this.qsize -= 1;
-    }
-}
-
 HashMap = function() {
     this.map = new Array();
 };
@@ -105,7 +60,6 @@ if(uid != '')    {
 var msgHistory = new HashMap();
 
 // variables
-var map = new HashMap();   // hashmap for call history
 var list = [];    // list of call log
 
 var index = 0;    // # of call log lists
@@ -122,7 +76,10 @@ assignNewCallLog(callee);  // make a call log for callee
 
 function assignNewCallLog(id) {
     if(id != -1) {
-        map.put(id, new Queue());
+        // make a history
+        if(!msgHistory.get(id))
+            msgHistory.put(id, new Array())
+        
         idx.put(id, index);
         index++;   
         
@@ -157,22 +114,17 @@ function assignNewCallLog(id) {
                 updateChatWindow(name); 
             })
         })(idx.get(from),from);
-
-
-        // make a history
-        if(!msgHistory.get(callee))
-            msgHistory.put(from, new Array())
     }
 }
 
 function updateCalllog() {
-    keys = map.getKeys();
+    keys = msgHistory.getKeys();
     console.log('key length: '+keys.length);
 
     for(i=0;i<keys.length;i++) {
         console.log('key: '+keys[i]);
 
-        var q = map.get(keys[i]);
+        var q = msgHistory.get(keys[i]);
         from = keys[i];
 
         if(!q) {
@@ -201,7 +153,7 @@ function setDest(id) {
     console.log('Destination: '+id);
     callee = id;
 
-    if(!map.get(callee)) {
+    if(!msgHistory.get(callee)) {
         assignNewCallLog(callee);
     }
 
@@ -272,10 +224,16 @@ function onSend(e) {
         socket.emit('chat', msgJSON);
 
         // save the sent message
-        var q = map.get(callee);
-        q.push(chatmsg);
+        const log = {
+            logType: 1,    // 1: sent, 0: receive
+            msg: chatmsg
+        };
 
-        console.log('sent message: ' + callee + ':' + q.size());
+        callLog = msgHistory.get(callee);
+        callLog.push(log);
+
+        console.log('sent message: ' + callee + ':' + log);
+        console.log('from: ' + log.msg.From + ' msg: ' + log.msg.Text + ' timestamp: '+log.msg.Timestamp);
     }
     
     message.value = "";
@@ -316,14 +274,18 @@ socket.on('chat', function(data){
   
     if(data.EvtType == 'message') {
         // if the sender is not in call list, create a call log
-        if(!map.get(data.From)) {
+        if(!msgHistory.get(data.From)) {
             assignNewCallLog(data.From);      
 
             console.log('New hashmap table was created: '+data.From);
         }
 
-        var q = map.get(data.From);
-        q.push(data);
+        const log = {
+            logType: 0,    // 1: sent, 0: receive
+            msg: data
+        };
+        callLog = msgHistory.get(data.From);
+        callLog.push(log);
         
         // show received message
         if(callee == -1) {
@@ -348,32 +310,18 @@ function updateChatWindow(from) {
         chatPanel.innerHTML = ''; // clear window
         callLog = msgHistory.get(from);
 
-        var q = map.get(from);    
-        if(q) {            
-            var size = q.size();
-            console.log('QUEUE size: '+ size);
-            for(i=0;i<size;i++) {
-                var v = q.front();
-                q.pop();
-                console.log(v.data);
-
-                // push to database            
-                callLog.push(v.data)
-            }
-        } 
-
         // shows 50 messages based on arrived order    
         if(callLog.length < 50) start = 0;
         else start = callLog.length - 50;
 
         for(i=start;i<callLog.length;i++) {
-            var date = new Date(callLog[i].Timestamp * 1000);
+            var date = new Date(callLog[i].msg.Timestamp * 1000);
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-            if(callLog[i].From == uid)
-                addSenderMessage(timestr,callLog[i].Text);
+            if(callLog[i].logType == 1)
+                addSenderMessage(timestr,callLog[i].msg.Text);
             else 
-                addReceiverMessage(callLog[i].From,timestr,callLog[i].Text);  // To-Do: data.From -> Name       
+                addReceiverMessage(callLog[i].msg.From,timestr,callLog[i].msg.Text);  // To-Do: data.From -> Name       
         }
     }
 }
