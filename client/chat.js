@@ -30,6 +30,51 @@ HashMap.prototype = {
     }
 };
 
+Queue = function() {
+    this.first = null;
+    this.qsize = 0;
+    this.recent = null;
+}
+  
+Queue.prototype = {
+    size: function() {
+        return this.qsize;
+    },
+    isEmpty: function(){
+        return (this.qsize == 0);
+    },
+    push: function(data) {
+        var Node = function(data) {
+            this.data = data;
+            this.next = null;
+        };
+
+        var node = new Node(data);
+  
+        if (!this.first){
+            this.first = node;
+        } else {
+            n = this.first;
+            while (n.next) {
+                n = n.next;
+            }
+            n.next = node;
+        }
+    
+        this.qsize += 1;
+        this.recent = data;
+
+        return node;
+    },
+    front: function() {
+        return this.first;
+    },
+    pop: function() {
+        this.first = this.first.next;
+        this.qsize -= 1;
+    }
+}
+
 // Make connection
 var socket = io.connect('http://localhost:4000');
 
@@ -70,7 +115,10 @@ var idx = new HashMap();   // hashmap for index
 var msglist = [];
 var msglistparam = [];
 var maxMsgItems = 50;
+var IMDN;
 IMDN = new HashMap();
+var queue;
+queue = new Queue();
 
 for (i=0;i<maxMsgItems;i++) {
     msglist.push(document.getElementById('msgLog'+i));
@@ -126,6 +174,17 @@ function assignNewCallLog(id) {
                 if(name != callee) {
                     callee = name;
 
+                    callLog = msgHistory.get(callee);
+                    for(i=callLog.length()-1;i>=0;i--) {
+                        if(callLog[i].logType==0) {  // for received message but not displayed
+                            if(callLog[i].status==1) {
+                                sendDisplayNoti(callLog[i].From, callLog[i].MsgID);
+                                callLog[i].status = 2;
+                            }
+                            else break;
+                        }
+                    }
+
                     setConveration(name);
                     updateChatWindow(name);
                 } 
@@ -141,12 +200,12 @@ function updateCalllog() {
     for(i=0;i<keys.length;i++) {
         console.log('key: '+keys[i]);
 
-        var q = msgHistory.get(keys[i]);
+        var map = msgHistory.get(keys[i]);
         from = keys[i];
 
-        if(!q) {
-            var text = q.recent.Text;
-            var date = new Date(q.recent.Timestamp * 1000);
+        if(!map) {
+            var text = map.recent.Text;
+            var date = new Date(map.recent.Timestamp * 1000);
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
             console.log('From: '+from+' Text: '+text+' Timestr: '+timestr);
@@ -221,7 +280,7 @@ function onSend(e) {
             EvtType: "message",
             From: uid,
             To: callee,
-            MsgID: "1234",
+            MsgID: uuidv4(),
             Timestamp: timestamp,
             Text: message.value
         };
@@ -240,6 +299,7 @@ function onSend(e) {
         // save the sent message
         const log = {
             logType: 1,    // 1: sent, 0: receive
+            status: 0,     // 0: sent, 1: delivery, 2: display
             msg: chatmsg
         };
 
@@ -257,6 +317,12 @@ function onSend(e) {
     message.value = "";
 }
 
+function uuidv4() {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+  }
+
 // receive the id of callee from "invite.html"
 function setConveration(id) {
     if(id != -1) {
@@ -270,9 +336,8 @@ socket.on('chat', function(data){
     var date = new Date(data.Timestamp * 1000);
     var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-    console.log("web: " + data.Text);
-  
     if(data.EvtType == 'message') {
+        console.log("received: " + data.Text);
         // if the sender is not in call list, create a call log
         if(!msgHistory.get(data.From)) {
             assignNewCallLog(data.From);      
@@ -282,6 +347,7 @@ socket.on('chat', function(data){
 
         const log = {
             logType: 0,    // 1: sent, 0: receive
+            status: 0,     // 0: sent, 1: delivery, 2: display
             msg: data
         };
         callLog = msgHistory.get(data.From);
@@ -304,28 +370,24 @@ socket.on('chat', function(data){
         listparam[idx.get(data.From)][1].textContent = data.Text; 
         listparam[idx.get(data.From)][2].textContent = timestr;
 
-        // send delivery report
-        console.log('<-- delivered report: '+data.MsgID);
+        sendDeliveryNoti(data.From, data.MsgID);
+        log.status = 1;
+        callLog[msgHistory.length-1] = log;
+        
+        // send display report
+        focused = document.hasFocus();
+        console.log('focuse: ', focused);
 
-        var date = new Date();
-        var timestamp = Math.floor(date.getTime()/1000);
-        
-        const deliverymsg = {
-            EvtType: "delivery",
-            From: uid,
-            To: data.From,
-            MsgID: data.MsgID,
-            Timestamp: timestamp,
-        };
-        
-        const deliveryJSON = JSON.stringify(deliverymsg);
-        console.log(deliveryJSON);    
-            
-        // send the delivery message
-        socket.emit('chat', deliveryJSON);          
+        if(focused) {
+            sendDisplayNoti(data.From, data.MsgID);
+            log.status = 1;
+            callLog[msgHistory.length-1] = log;
+        } else {
+            queue.push(data);
+            console.log('display noti was queued: '+data)
+        }
     }
-
-    if(data.EvtType == 'delivery') {
+    else if(data.EvtType == 'delivery') {
         console.log('delivery report was received: '+data.MsgID);        
 
         // change status from 'sent' to 'delivery'
@@ -333,16 +395,110 @@ socket.on('chat', function(data){
         console.log('imdn index: '+imdnIDX)
         msglistparam[imdnIDX].textContent = '1';
     }    
+    else if(data.EvtType == 'display') {
+        console.log('display report was received: '+data.MsgID);        
+
+        // change status from 'sent' to 'delivery'
+        imdnIDX = IMDN.get(data.MsgID);
+        console.log('imdn index: '+imdnIDX);
+        msglistparam[imdnIDX].textContent = '\u00A0';
+
+        IMDN.remove(data.MsgID);
+    } 
 });
 
-function addSenderMessage(index,timestr,msg) {
+(function(q) {
+    window.addEventListener("focus", function() {
+        console.log("Back to front");
+       // updateChatWindow();
+        
+        
+    })
+})(queue);
+
+function updateDisplayReceived() {
+    console.log("send display notifications stored");
+    while(!queue.isEmpty()) {
+        data = queue.front();
+        queue.pop();
+
+        sendDisplayNoti(data.From, data.MsgID);        
+    } 
+}
+
+function sendDeliveryNoti(sender, MsgID) {
+    // send delivery report
+    console.log('<-- delivered report: '+MsgID);
+
+    var date = new Date();
+    var timestamp = Math.floor(date.getTime()/1000);
+    
+    const deliverymsg = {
+        EvtType: "delivery",
+        From: uid,
+        To: sender,
+        MsgID: MsgID,
+        Timestamp: timestamp,
+    };
+    
+    const deliveryJSON = JSON.stringify(deliverymsg);
+    console.log(deliveryJSON);    
+                
+    socket.emit('chat', deliveryJSON);    
+}
+
+function sendDisplayNoti(sender, MsgID) {
+    var date = new Date();
+    var timestamp = Math.floor(date.getTime()/1000);
+            
+    const displaymsg = {
+        EvtType: "display",
+        From: uid,
+        To: sender,
+        MsgID: MsgID,
+        Timestamp: timestamp,
+    };
+            
+    const displayJSON = JSON.stringify(displaymsg);
+    console.log(displayJSON);    
+                
+    // send the display message
+    socket.emit('chat', displayJSON);   
+}
+
+/*
+window.addEventListener('focus', function(IMDN, queue, msglistparam) {
+    return function() {
+        updateDisplayReceived(IMDN, queue, msglistparam);
+    }
+}(IMDN, queue, msglistparam)); */
+
+
+//window.addEventListener('focus', (updateDisplayReceived(IMDN, queue, msglistparam));
+
+/*
+(function(index) {
+    msglist[index].addEventListener("click", function() {
+        console.log('click! index: '+index);
+    })
+})(i); */
+
+
+
+function addSenderMessage(index,timestr,msg,status) {
 //    console.log("add sent message: "+msg);
     
     msglist[index].innerHTML = 
         `<div class="chat-sender chat-sender--right"><h1>${timestr}</h1>${msg}<h2 id="status${index}"></h2></div>`;     
     
-    msglistparam[index] = document.getElementById('status'+index); 
-    msglistparam[index].textContent = 'r'; 
+    msglistparam[index] = document.getElementById('status'+index);
+    
+    if(status==0) 
+        msglistparam[index].textContent = 'v'; 
+    else if(status==1)
+        msglistparam[index].textContent = '1'; 
+    else if(status==1)
+        msglistparam[index].textContent = '\u00A0'; 
     
 //    console.log(msglist[index].innerHTML);
 }
@@ -399,4 +555,5 @@ socket.on('participant', function(data){
 
 socket.on('typing', function(data){
     feedback.innerHTML = '<p><em>' + data + ' is typing a message...</em></p>';
+    
 });
