@@ -360,3 +360,10 @@ body {
   color: black;
   font-size: 0.7em;
 }
+.chat-sender h2 {
+  margin-top:-1.0em;
+  margin-bottom:-0.5em;
+  margin-left:-2.5em;
+  color: black;
+  font-size: 0.7em;
+}

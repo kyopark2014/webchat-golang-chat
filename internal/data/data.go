@@ -13,6 +13,7 @@ type Message struct {
 	EvtType   string
 	From      string
 	To        string
+	MsgID     string
 	Timestamp int
 	Text      string
 }

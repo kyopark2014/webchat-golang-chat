@@ -23,6 +23,7 @@ type Event struct {
 	EvtType   string
 	From      string
 	To        string
+	MsgID     string
 	Timestamp int
 	Text      string
 }
@@ -103,15 +104,15 @@ func InitServer(conf *config.AppConfig) error {
 				for {
 					select {
 					case event := <-userEvent: // sending event to client(browser)
-						log.D("sending event to browsers: %v %v %v %v %v (%v)", event.EvtType, event.From, event.To, event.Timestamp, event.Text, so.Id())
+						log.D("sending event to browsers: %v %v %v %v %v %v (%v)", event.EvtType, event.From, event.To, event.MsgID, event.Timestamp, event.Text, so.Id())
 						so.Emit("chat", event)
 
 					case msg := <-newMessages: // received message from client(browser)
 						var newMSG data.Message
 						json.Unmarshal([]byte(msg), &newMSG)
-						log.D("receiving message from browser: %v %v %v %v (%v)", newMSG.From, newMSG.To, newMSG.Timestamp, newMSG.Text, so.Id())
+						log.D("receiving message from browser: %v %v %v %v %v (%v)", newMSG.From, newMSG.To, newMSG.MsgID, newMSG.Timestamp, newMSG.Text, so.Id())
 
-						receive <- NewEvent("message", newMSG.From, newMSG.To, int(newMSG.Timestamp), newMSG.Text)
+						receive <- NewEvent(newMSG.EvtType, newMSG.From, newMSG.To, newMSG.MsgID, int(newMSG.Timestamp), newMSG.Text)
 					case <-quit:
 						return
 					}
@@ -143,8 +144,8 @@ func InitServer(conf *config.AppConfig) error {
 }
 
 // NewEvent is to create an new event
-func NewEvent(evtType string, from string, to string, timestamp int, msg string) Event {
-	return Event{evtType, from, to, timestamp, msg}
+func NewEvent(evtType string, from string, to string, msgID string, timestamp int, msg string) Event {
+	return Event{evtType, from, to, msgID, timestamp, msg}
 }
 
 // setEvent is to save a message
@@ -199,7 +200,7 @@ func subscribeEvent(channel string, e chan Event) {
 
 // setEvent is to save a message
 func pushEvent(event *Event) {
-	log.D("event: %v %v %v %v %v", event.EvtType, event.From, event.To, event.Timestamp, event.Text)
+	log.D("event: %v %v %v %v %v %v", event.EvtType, event.From, event.To, event.MsgID, event.Timestamp, event.Text)
 
 	// generate key
 	key := event.From // UID to identify the profile
@@ -251,7 +252,7 @@ func getEventList(key string) []*Event {
 
 // setEvent is to save a message
 func setEvent(event *Event) {
-	log.D("event: %v %v %v %v %v", event.EvtType, event.From, event.To, event.Timestamp, event.Text)
+	log.D("event: %v %v %v %v %v %v", event.EvtType, event.From, event.To, event.MsgID, event.Timestamp, event.Text)
 
 	// generate key
 	key := event.From // UID to identify the profile

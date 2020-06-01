@@ -41,7 +41,6 @@ const attachFile = document.querySelector('#attachFile');
 const newConversation = document.querySelector('#newConversation');  // To input callee number
 
 const chatPanel = document.querySelector('#chatPanel');
-const calleeProfile = document.querySelector('#calleeProfile');
 
 const refreshCallLog = document.querySelector('#refreshCallLog');
 const refreshChatWindow = document.querySelector('#refreshChatWindow');
@@ -69,7 +68,10 @@ var idx = new HashMap();   // hashmap for index
 
 // initiate all elements of message log
 var msglist = [];
+var msglistparam = [];
 var maxMsgItems = 50;
+IMDN = new HashMap();
+
 for (i=0;i<maxMsgItems;i++) {
     msglist.push(document.getElementById('msgLog'+i));
 
@@ -219,6 +221,7 @@ function onSend(e) {
             EvtType: "message",
             From: uid,
             To: callee,
+            MsgID: "1234",
             Timestamp: timestamp,
             Text: message.value
         };
@@ -300,14 +303,46 @@ socket.on('chat', function(data){
         listparam[idx.get(data.From)][0].textContent = data.From; 
         listparam[idx.get(data.From)][1].textContent = data.Text; 
         listparam[idx.get(data.From)][2].textContent = timestr;
+
+        // send delivery report
+        console.log('<-- delivered report: '+data.MsgID);
+
+        var date = new Date();
+        var timestamp = Math.floor(date.getTime()/1000);
+        
+        const deliverymsg = {
+            EvtType: "delivery",
+            From: uid,
+            To: data.From,
+            MsgID: data.MsgID,
+            Timestamp: timestamp,
+        };
+        
+        const deliveryJSON = JSON.stringify(deliverymsg);
+        console.log(deliveryJSON);    
+            
+        // send the delivery message
+        socket.emit('chat', deliveryJSON);          
     }
+
+    if(data.EvtType == 'delivery') {
+        console.log('delivery report was received: '+data.MsgID);        
+
+        // change status from 'sent' to 'delivery'
+        imdnIDX = IMDN.get(data.MsgID);
+        console.log('imdn index: '+imdnIDX)
+        msglistparam[imdnIDX].textContent = '1';
+    }    
 });
 
 function addSenderMessage(index,timestr,msg) {
 //    console.log("add sent message: "+msg);
-
+    
     msglist[index].innerHTML = 
-        `<div class="chat-sender chat-sender--right"><h1>${timestr}</h1>${msg}</div>`;     
+        `<div class="chat-sender chat-sender--right"><h1>${timestr}</h1>${msg}<h2 id="status${index}"></h2></div>`;     
+    
+    msglistparam[index] = document.getElementById('status'+index); 
+    msglistparam[index].textContent = 'r'; 
     
 //    console.log(msglist[index].innerHTML);
 }
@@ -343,8 +378,11 @@ function updateChatWindow(from) {
             var date = new Date(callLog[i].msg.Timestamp * 1000);
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-            if(callLog[i].logType == 1)
+            if(callLog[i].logType == 1) {
                 addSenderMessage(i-start,timestr,callLog[i].msg.Text);
+
+                IMDN.put(callLog[i].msg.MsgID, i-start);
+            }
             else 
                 addReceiverMessage(i-start,callLog[i].msg.From,timestr,callLog[i].msg.Text);  // To-Do: data.From -> Name       
         }
