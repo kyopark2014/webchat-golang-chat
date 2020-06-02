@@ -30,53 +30,9 @@ HashMap.prototype = {
     }
 };
 
-Queue = function() {
-    this.first = null;
-    this.qsize = 0;
-    this.recent = null;
-}
-  
-Queue.prototype = {
-    size: function() {
-        return this.qsize;
-    },
-    isEmpty: function(){
-        return (this.qsize == 0);
-    },
-    push: function(data) {
-        var Node = function(data) {
-            this.data = data;
-            this.next = null;
-        };
-
-        var node = new Node(data);
-  
-        if (!this.first){
-            this.first = node;
-        } else {
-            n = this.first;
-            while (n.next) {
-                n = n.next;
-            }
-            n.next = node;
-        }
-    
-        this.qsize += 1;
-        this.recent = data;
-
-        return node;
-    },
-    front: function() {
-        return this.first;
-    },
-    pop: function() {
-        this.first = this.first.next;
-        this.qsize -= 1;
-    }
-}
-
 // Make connection
-var socket = io.connect('http://localhost:4000');
+//var socket = io.connect('http://localhost:4000');
+var socket = io.connect('http://10.253.69.155:4000');
 
 // Documents
 const title = document.querySelector('#title');
@@ -97,8 +53,11 @@ if(uid != '')    {
     socket.emit('join',uid);  
     console.log('joined: '+uid);
 
-    title.textContent = 'CHAT '+uid; 
-}
+    title.textContent = uid; 
+
+    uid_str = document.getElementById('uid');
+    uid_str.textContent = uid;
+} 
 
 var callee = -1;  // current conversation partner
 
@@ -115,10 +74,7 @@ var idx = new HashMap();   // hashmap for index
 var msglist = [];
 var msglistparam = [];
 var maxMsgItems = 50;
-var IMDN;
 IMDN = new HashMap();
-var queue;
-queue = new Queue();
 
 for (i=0;i<maxMsgItems;i++) {
     msglist.push(document.getElementById('msgLog'+i));
@@ -166,6 +122,11 @@ function assignNewCallLog(id) {
 
         listparam[idx.get(from)][0].textContent = from;
         
+        var m = new HashMap();
+        m.put('abc',10);
+
+        callLog = msgHistory.get(callee);
+
         // add listener        
         (function(index, name) {
             list[index].addEventListener("click", function() {
@@ -174,19 +135,19 @@ function assignNewCallLog(id) {
                 if(name != callee) {
                     callee = name;
 
-                    callLog = msgHistory.get(callee);
-                    for(i=callLog.length()-1;i>=0;i--) {
-                        if(callLog[i].logType==0) {  // for received message but not displayed
-                            if(callLog[i].status==1) {
-                                sendDisplayNoti(callLog[i].From, callLog[i].MsgID);
+                    callLog = msgHistory.get(callee);                   
+                    for(i=callLog.length-1;i>=0;i--) {
+                        if(callLog[i].logType==0) {  
+                            if(callLog[i].status==1) { // If display notification needs to send
+                                console.log('send display notification: '+callLog[i].msg.MsgID);
+                                sendDisplayNoti(callLog[i].msg.From, callLog[i].msg.MsgID);
                                 callLog[i].status = 2;
                             }
                             else break;
                         }
                     }
-
                     setConveration(name);
-                    updateChatWindow(name);
+                    updateChatWindow(name); 
                 } 
             })
         })(idx.get(from),from);
@@ -200,12 +161,12 @@ function updateCalllog() {
     for(i=0;i<keys.length;i++) {
         console.log('key: '+keys[i]);
 
-        var map = msgHistory.get(keys[i]);
+        var callLog = msgHistory.get(keys[i]);
         from = keys[i];
-
-        if(!map) {
-            var text = map.recent.Text;
-            var date = new Date(map.recent.Timestamp * 1000);
+        
+        if(callLog.length>0) {
+            var text = callLog[callLog.length-1].msg.Text;
+            var date = new Date(callLog[callLog.length-1].msg.Timestamp * 1000);
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
             console.log('From: '+from+' Text: '+text+' Timestr: '+timestr);
@@ -216,6 +177,8 @@ function updateCalllog() {
         } else {
             from = keys[i];
             listparam[idx.get(from)][0].textContent = from; 
+            listparam[idx.get(from)][1].textContent = ''; 
+            listparam[idx.get(from)][2].textContent = '';
         }
     }
 }
@@ -245,7 +208,7 @@ message.addEventListener('keyup', function(e){
 });
 
 refreshCallLog.addEventListener('click', function(){
-    console.log('update call logs');
+    console.log('update callupdate call logs');
     updateCalllog();
 });
 
@@ -255,6 +218,12 @@ refreshChatWindow.addEventListener('click', function(){
 });
 
 attachFile.addEventListener('click', function(){
+    callLog = msgHistory.get(callee);                   
+
+    for(i=0;i<callLog.length;i++) {
+        console.log(callLog[i].logType+' '+callLog[i].status+' '+callLog[i].msg.From+' '+callLog[i].msg.MsgID)
+    } 
+
     var input = $(document.createElement('input')); 
     input.attr("type", "file");
     input.trigger('click');
@@ -284,9 +253,9 @@ function onSend(e) {
             Timestamp: timestamp,
             Text: message.value
         };
-    
+
         const msgJSON = JSON.stringify(chatmsg);
-        console.log(msgJSON);
+    //    console.log(msgJSON);
     
         // update call log
         var date = new Date(timestamp * 1000);
@@ -321,7 +290,7 @@ function uuidv4() {
     return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
       (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
     );
-  }
+}
 
 // receive the id of callee from "invite.html"
 function setConveration(id) {
@@ -380,12 +349,9 @@ socket.on('chat', function(data){
 
         if(focused) {
             sendDisplayNoti(data.From, data.MsgID);
-            log.status = 1;
-            callLog[msgHistory.length-1] = log;
-        } else {
-            queue.push(data);
-            console.log('display noti was queued: '+data)
-        }
+            imdnIDX = IMDN.get(data.MsgID);
+            callLog[imdnIDX].status = 2;
+        } 
     }
     else if(data.EvtType == 'delivery') {
         console.log('delivery report was received: '+data.MsgID);        
@@ -394,6 +360,9 @@ socket.on('chat', function(data){
         imdnIDX = IMDN.get(data.MsgID);
         console.log('imdn index: '+imdnIDX)
         msglistparam[imdnIDX].textContent = '1';
+
+        callLog = msgHistory.get(data.From);
+        callLog[imdnIDX].status = 1;
     }    
     else if(data.EvtType == 'display') {
         console.log('display report was received: '+data.MsgID);        
@@ -403,32 +372,42 @@ socket.on('chat', function(data){
         console.log('imdn index: '+imdnIDX);
         msglistparam[imdnIDX].textContent = '\u00A0';
 
-        IMDN.remove(data.MsgID);
+        callLog = msgHistory.get(data.From);
+        callLog[imdnIDX].status = 2;     
     } 
 });
 
-(function(q) {
+(function() {
     window.addEventListener("focus", function() {
         console.log("Back to front");
-       // updateChatWindow();
-        
-        
+
+        if(msgHistory.get(callee))
+            updateCallLogToDisplayed();
     })
-})(queue);
+})();
 
-function updateDisplayReceived() {
-    console.log("send display notifications stored");
-    while(!queue.isEmpty()) {
-        data = queue.front();
-        queue.pop();
+function updateCallLogToDisplayed() {
+    callLog = msgHistory.get(callee);                   
 
-        sendDisplayNoti(data.From, data.MsgID);        
-    } 
+/*    for(i=0;i<callLog.length;i++) {
+        console.log(callLog[i].logType+' '+callLog[i].status+' '+callLog[i].msg.From+' '+callLog[i].msg.MsgID)
+    } */
+    
+    for(i=callLog.length-1;i>=0;i--) {
+        if(callLog[i].logType==0) {  
+            if(callLog[i].status==1) { // If display notification needs to send
+                console.log('send display notification: '+callLog[i].msg.MsgID);
+                sendDisplayNoti(callLog[i].msg.From, callLog[i].msg.MsgID);
+                callLog[i].status = 2;
+            }
+            else break;
+        }  
+    }
 }
 
 function sendDeliveryNoti(sender, MsgID) {
     // send delivery report
-    console.log('<-- delivered report: '+MsgID);
+    console.log('<-- delivery report: '+MsgID);
 
     var date = new Date();
     var timestamp = Math.floor(date.getTime()/1000);
@@ -442,12 +421,13 @@ function sendDeliveryNoti(sender, MsgID) {
     };
     
     const deliveryJSON = JSON.stringify(deliverymsg);
-    console.log(deliveryJSON);    
                 
     socket.emit('chat', deliveryJSON);    
 }
 
 function sendDisplayNoti(sender, MsgID) {
+   console.log('<-- display report: '+MsgID);    
+
     var date = new Date();
     var timestamp = Math.floor(date.getTime()/1000);
             
@@ -460,54 +440,35 @@ function sendDisplayNoti(sender, MsgID) {
     };
             
     const displayJSON = JSON.stringify(displaymsg);
-    console.log(displayJSON);    
                 
     // send the display message
     socket.emit('chat', displayJSON);   
 }
 
-/*
-window.addEventListener('focus', function(IMDN, queue, msglistparam) {
-    return function() {
-        updateDisplayReceived(IMDN, queue, msglistparam);
-    }
-}(IMDN, queue, msglistparam)); */
+function addSenderMessage(index,timestr,text,status) {
+    console.log("add sent message: "+text+' status='+status);
 
-
-//window.addEventListener('focus', (updateDisplayReceived(IMDN, queue, msglistparam));
-
-/*
-(function(index) {
-    msglist[index].addEventListener("click", function() {
-        console.log('click! index: '+index);
-    })
-})(i); */
-
-
-
-function addSenderMessage(index,timestr,msg,status) {
-//    console.log("add sent message: "+msg);
-    
     msglist[index].innerHTML = 
-        `<div class="chat-sender chat-sender--right"><h1>${timestr}</h1>${msg}<h2 id="status${index}"></h2></div>`;     
-    
+        `<div class="chat-sender chat-sender--right"><h1>${timestr}</h1>${text}&nbsp;<h2 id="status${index}"></h2></div>`;   
+       // To-Do In orter to manager that all characters are blank, inserted a blank but I will fix it later.
+       
     msglistparam[index] = document.getElementById('status'+index);
     
     if(status==0) 
-        msglistparam[index].textContent = 'v'; 
+        msglistparam[index].textContent = '\u00A0'; 
     else if(status==1)
         msglistparam[index].textContent = '1'; 
-    else if(status==1)
+    else if(status==2)
         msglistparam[index].textContent = '\u00A0'; 
     
-//    console.log(msglist[index].innerHTML);
+    console.log(msglist[index].innerHTML);
 }
 
 function addReceiverMessage(index, sender,timestr, msg) {
 //    console.log("add received message: "+msg);
 
     msglist[index].innerHTML =  
-    `<div class="chat-receiver chat-receiver--left"><h1>${sender}</h1><h2>${timestr}</h2>${msg}</div>`;     
+    `<div class="chat-receiver chat-receiver--left"><h1>${sender}</h1><h2>${timestr}</h2>${msg}&nbsp;</div>`;     
 
 //    console.log(msglist[index].innerHTML);   
 }
@@ -518,6 +479,7 @@ function updateChatWindow(from) {
         for (i=0;i<maxMsgItems;i++) {
             msglist[i].innerHTML = '';
         }
+        IMDN.clear();
 
         callee = from;
 
@@ -528,14 +490,13 @@ function updateChatWindow(from) {
         if(callLog.length < maxMsgItems) start = 0;
         else start = callLog.length - maxMsgItems;
 
-        // console.log('start: '+start+' end: ' + callLog.length);
-
         for(i=start;i<callLog.length;i++) {
             var date = new Date(callLog[i].msg.Timestamp * 1000);
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
             if(callLog[i].logType == 1) {
-                addSenderMessage(i-start,timestr,callLog[i].msg.Text);
+                console.log('Text: ',callLog[i].msg.Text)
+                addSenderMessage(i-start,timestr,callLog[i].msg.Text,callLog[i].status);
 
                 IMDN.put(callLog[i].msg.MsgID, i-start);
             }

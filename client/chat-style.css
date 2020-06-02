@@ -8,8 +8,8 @@ body {
   }
   
   .container {
-    max-height: 1000px; /* added for height */
-    margin: 60px auto;  
+    max-height: 800px; /* added for height */
+    margin: 50px auto;  
     background: #fff;
     padding: 0;
     border-radius: 7px;
@@ -90,7 +90,7 @@ body {
 /* chat log */
   .friend-panel {
     margin-bottom: 10px;
-    height: 592px;
+    height: 478px;
     max-height: 100%;  
     overflow: auto;
   }
@@ -252,7 +252,7 @@ body {
   align-items: baseline;
   padding: 10px 15px;
   align-items: center;
-  bottom: 205px;
+  bottom: 405px;
 }
 .chat-box-tray input {
   margin: 0 10px;
@@ -268,7 +268,7 @@ body {
 }
 
 .chat-panel {
-  height: 40em;
+  height: 30em;
   overflow: auto;
 }
 
