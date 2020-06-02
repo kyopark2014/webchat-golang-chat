@@ -6,7 +6,7 @@ In this application, I am targeting a web client which is one of supported clien
 In order to make a seamless connection between web client and server, socket.io is a good way to support bidirectional message flow. Also, the application server is based on golang which have a strangth for massice transaction. 
 
 Client <-> Server : Socket.io
-
+ 
 #### Overall
 ![alternative text](http://www.plantuml.com/plantuml/png/ZPD1Rzf048Nlyoj6N0AAKj4SUuZY1PIuQGB2H56Fotg05Ok7hiT9QTN_tjqON9CY9LoGt_jctinOlYv5Uwas3ersRk7u1SgrBRRQwmqQfyiIVmE6dz9clVHS5Vc07NjyMbcXLoVndbzgKRb0rJZxdFnRDH7nTbu9fOQBpFuYxCCVEFkNMChE4PQ1Cd4eQ3laYMMtfS79KKwYwSVHqSVHv3tKsO8YYEnbnG1dOiKHTjB2YjLYkUZ0okQ42sQPyqy0ROGz9lj_1M3OEJ8HBV69vibsUwobzv_VF5z2haNFTKauL00_Age8fwDXcc6IuNG8BV_xGt8_1aZmuk9gtnw_uEriDi6RqGoxZfUsw27ihG0DLG3CYimQdxMpkPKT1ArTFhw3fY3eIP0k-_tn7S9_IHa9JZmlhAF0TMDmhnKs7UwPWGwHBQCUF9hwcPeETV-hU9Cu91S56S5koMPDyibo3wBJz7rKsM2QgX4c02hAhwjvqa9XGosUUGDmlDlDgO6F9pu_hxa3fi2JLBx0HcWNgFew6CxJ_PgD7tfOHyON6QpEfbnsZbQ0QBHFK98SiBaswshRCFMUaqVrBSrkCQafWA0sHwgbmrtKwKI0Qoho-1a2_0K0)
 
