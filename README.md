@@ -7,7 +7,8 @@ In order to make a seamless connection between web client and server, socket.io 
 
 Client <-> Server : Socket.io
 
-![image](https://user-images.githubusercontent.com/52392004/82755922-c67dfe80-9e11-11ea-9344-24b1f79dd415.png)
+![alternative text](http://www.plantuml.com/plantuml/png/ZP5FRnCn4CNlyob6kK1L1P4zSe1waY1M0WbbLN54ZdUIM7KynPvjA8ZlZijsbJz4Qauh_TxRdv_bcwmsQRSDw6m8go0xo7S-tjjaj-Y2pHb_0o8YMNUtJjB5TYf14dxRUEL_YKb9TZsaK5fzNLBBwPGQrUINdNBj93R-5-DR-0ElzYTcVGoCkRJSqoWuJ3YnwECzJyzEELkjBw_EBw-Qbwh1HtugeYJT281w3OmZijax_1XaXvEnodY2hx_UKdDBLrSZsFYMSIMYI_a9O9qMhtd-4e2J4DYfbvZnIrutwM5oXbNGMhLBcnbd13ywxXWNyrdTV3Te6bpC9aUGUbW161o_7xpu3ft4MCmma1AMVqjGnZRJHKrpD72OpgY4sJuycz6WRTlq1W1eRwx-CrUzkJeo4mpfEJCDvjFDesrUZv1ELbrVbwZEICF9t7w0nDgbs8jGLhqP3YuqZ2hFyxbkFY7rTe22Z-_JyyF1jASt7Djk6m3WBm00)
+
 
 Once one of client in a chatroom is not online, PUBSUB is not a good way to commnicate messages. So, the application server saves the message in Queue too using linked list. Then, once a client is back online, the message can be delivered to the client robustly.
 
