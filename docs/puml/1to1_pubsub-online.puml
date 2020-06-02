@@ -21,26 +21,32 @@ actor B
 collections MsgSrv1
 collections MsgSrv2
 database DB
-queue PUBSUB
+
+queue REDIS_A AS RD1
+queue REDIS_B AS RD2
+
+database DYNAMO
 
 A -> MsgSrv1 : connect
-MsgSrv1 -> DB : location A
-MsgSrv1 -> PUBSUB : SUBSCRIBE A
+MsgSrv1 -> RD1 : SUBSCRIBE A
+
+MsgSrv1 -> DB : save REDIS A addr.
 
 
 B -> MsgSrv2 : connect
-MsgSrv2 -> DB : location B
-MsgSrv2 -> PUBSUB : SUBSCRIBE B
+MsgSrv2 -> RD2 : SUBSCRIBE B
+
+MsgSrv2 -> DB : save REDIS B addr.
 
 
 A -> MsgSrv1 : "msg" B
 MsgSrv1 -> DB ++ : Is B connected?
-return yes
+return addr. of REDIS
 
 
-MsgSrv1 -> PUBSUB : PUBLISH B "msg"
+MsgSrv1 -> RD2 : PUBLISH B "msg"
 
-PUBSUB -> MsgSrv2 : "msg"
+RD2 -> MsgSrv2 : "msg"
 
 MsgSrv2 -> B : "msg"
 
