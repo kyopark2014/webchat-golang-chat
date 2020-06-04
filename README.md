@@ -2,14 +2,6 @@
 
 It is a chat server based on PUBSUB. In order to make a seamless connection between web client and server, socket.io is a good way to support bidirectional message flow. Also, the application server is based on golang which have a strangth for massice transaction. 
 
-### Basic Call Flow
-
-Client <-> Server : Socket.io
- 
-#### PUBSUB
-![alternative text](http://www.plantuml.com/plantuml/png/ZOv1ZzCm48Nlyoj6kInxg4Hwv83MBek811BQQCNPwmojLSTJx0cb8FuxBgbL4aMYkKJ-_Fczzv34H1bw3sdlmi54qwFr9YNy1PW_RUn-6ta8tOOzH_ooSq9_RrICV1oXzjaQTOuTnJbL8j6z34ADvT2wduIluJVSNHkJd3nXofQTRKb2aLXE1zeiJrbIczlLnzjLzJ_Lkq1d4JdAZW7kn8adhBH9pk9xpqUiLyAh6bzzVjRjixw_hs3dEiAlpFB2Fm2C5OweBdyDODbxik8u96m-rRFp6k3RG0FXc8UgnQTt00fNRyysla7B8MGVyYd3V9jPc-NDKwCVSn7eqLrFtFM2goUvLP-s5GfdFCdEGpusxGVKem6GQIcue9AlhqJ_utJatNUAfmf6Svwi9ag9hwTFooOrmxeKHpBTOhjB1s-okjnTX7brmVFcGXyeT4Fl_m00)
-
-
 ### PUBSUB ISSUES
 
 For one-to-one chat, published messages from Sender will return since the sender also do SUBSCRIBE into PUBSUB server.
@@ -27,6 +19,16 @@ The proposed architecture is using PUBSUB to endpoints which doesn't have the re
 ![image](https://user-images.githubusercontent.com/52392004/82962567-89756000-9ffb-11ea-8e5a-7eb737fd6f37.png)
 
 where Sender will publish to Receiver directly and messages can be delivered consistently without the state of Receiver.
+
+### Basic Call Flow
+
+Client <-> Server : Socket.io
+ 
+#### PUBSUB
+![alternative text](http://www.plantuml.com/plantuml/png/ZOv1ZzCm48Nlyoj6kInxg4Hwv83MBek811BQQCNPwmojLSTJx0cb8FuxBgbL4aMYkKJ-_Fczzv34H1bw3sdlmi54qwFr9YNy1PW_RUn-6ta8tOOzH_ooSq9_RrICV1oXzjaQTOuTnJbL8j6z34ADvT2wduIluJVSNHkJd3nXofQTRKb2aLXE1zeiJrbIczlLnzjLzJ_Lkq1d4JdAZW7kn8adhBH9pk9xpqUiLyAh6bzzVjRjixw_hs3dEiAlpFB2Fm2C5OweBdyDODbxik8u96m-rRFp6k3RG0FXc8UgnQTt00fNRyysla7B8MGVyYd3V9jPc-NDKwCVSn7eqLrFtFM2goUvLP-s5GfdFCdEGpusxGVKem6GQIcue9AlhqJ_utJatNUAfmf6Svwi9ag9hwTFooOrmxeKHpBTOhjB1s-okjnTX7brmVFcGXyeT4Fl_m00)
+
+
+
 
 
 
