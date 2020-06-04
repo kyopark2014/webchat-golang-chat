@@ -45,6 +45,4 @@ There are two connection ways between client and server. Socket.io is used for c
 where REDIS is for PUBSUB and DYNAMO DB is for storage for call logs. Notice that the diagram shows the simple flow for messaging where many flows are ignored to explain the basic flows.
 
 
-### REFERENCE
 
-https://codepen.io/FilipRastovic/pen/pXgqKK
