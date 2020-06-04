@@ -1,9 +1,8 @@
-# webchat
+# webchat-golang-chat
+
+It is a chat server based on PUBSUB. In order to make a seamless connection between web client and server, socket.io is a good way to support bidirectional message flow. Also, the application server is based on golang which have a strangth for massice transaction. 
 
 ### Basic Call Flow
-
-In this application, I am targeting a web client which is one of supported clients for this chat service.
-In order to make a seamless connection between web client and server, socket.io is a good way to support bidirectional message flow. Also, the application server is based on golang which have a strangth for massice transaction. 
 
 Client <-> Server : Socket.io
  
