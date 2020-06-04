@@ -86,11 +86,6 @@ func InitServer(conf *config.AppConfig) error {
 					case event := <-receive: //
 						log.D("sent message: %v", event.Text)
 
-						// To-Do: check the validity of receiver
-						// To-Do: lpush to QUEUE
-						// pushEvent(&event)
-						//getEventList(event.From)
-
 						// publish to PUBSUB
 						publishEvent(&event)
 
@@ -188,12 +183,6 @@ func subscribeEvent(channel string, e chan Event) {
 			}
 
 			e <- event // send event
-
-			/*	if event == nil {
-					log.D("No cache in Redis")
-				} else {
-					log.D("value: %v", event.Text) // To-Do
-				} */
 		}
 	}()
 }
