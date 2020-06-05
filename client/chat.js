@@ -218,12 +218,6 @@ refreshChatWindow.addEventListener('click', function(){
 });
 
 attachFile.addEventListener('click', function(){
-    callLog = msgHistory.get(callee);                   
-
-    for(i=0;i<callLog.length;i++) {
-        console.log(callLog[i].logType+' '+callLog[i].status+' '+callLog[i].msg.From+' '+callLog[i].msg.MsgID)
-    } 
-
     var input = $(document.createElement('input')); 
     input.attr("type", "file");
     input.trigger('click');
@@ -348,32 +342,35 @@ socket.on('chat', function(data){
         console.log('focuse: ', focused);
 
         if(focused) {
-            sendDisplayNoti(data.From, data.MsgID);
-            imdnIDX = IMDN.get(data.MsgID);
-            callLog[imdnIDX].status = 2;
+            if(imdnIDX = IMDN.get(data.MsgID)) {
+                callLog[imdnIDX].status = 2;
+                sendDisplayNoti(data.From, data.MsgID);
+            }
         } 
     }
     else if(data.EvtType == 'delivery') {
         console.log('delivery report was received: '+data.MsgID);        
 
         // change status from 'sent' to 'delivery'
-        imdnIDX = IMDN.get(data.MsgID);
-        console.log('imdn index: '+imdnIDX)
-        msglistparam[imdnIDX].textContent = '1';
+        if(imdnIDX = IMDN.get(data.MsgID)) {
+            console.log('imdn index: '+imdnIDX)
+            msglistparam[imdnIDX].textContent = '1';       
 
-        callLog = msgHistory.get(data.From);
-        callLog[imdnIDX].status = 1;
+            callLog = msgHistory.get(data.From);
+            callLog[imdnIDX].status = 1;
+        }
     }    
     else if(data.EvtType == 'display') {
         console.log('display report was received: '+data.MsgID);        
 
         // change status from 'sent' to 'delivery'
-        imdnIDX = IMDN.get(data.MsgID);
-        console.log('imdn index: '+imdnIDX);
-        msglistparam[imdnIDX].textContent = '\u00A0';
+        if(imdnIDX = IMDN.get(data.MsgID)) {
+            console.log('imdn index: '+imdnIDX);
+            msglistparam[imdnIDX].textContent = '\u00A0';
 
-        callLog = msgHistory.get(data.From);
-        callLog[imdnIDX].status = 2;     
+            callLog = msgHistory.get(data.From);
+            callLog[imdnIDX].status = 2;     
+        }
     } 
 });
 
